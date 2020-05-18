@@ -1,6 +1,10 @@
+# downloaded pip libraries
 import time
 import requests
 from slugify import slugify
+# internal libraries
+from helpers import parse_metadata
+
 
 class CharacterClass:
 	def __init__(self, char_class):
@@ -177,7 +181,7 @@ class CharacterClass:
 					visited.add(feature)
 
 					# add this data to markdown.
-					markdown += self.compose_markdown_feature(feature)
+					markdown += self.compose_markdown_feature(feature, progression)
 
 		# Trim excess new-lines and spaces.
 		markdown = markdown.strip()
@@ -187,7 +191,7 @@ class CharacterClass:
 		return markdown
 
 
-	def compose_markdown_feature(self, feature):
+	def compose_markdown_feature(self, feature, progression):
 		# Generate a sluggy.
 		slug = feature.replace('\'','')
 		slug = slugify(slug)
@@ -206,7 +210,10 @@ class CharacterClass:
 		if feature in self.data['options']:
 			options = self.data['options'][feature]
 			for option in options:
-				markdown += self.compose_markdown_feature(option)
+				markdown += self.compose_markdown_feature(option, progression)
+
+		# Parse embedded metadata tags.
+		markdown = parse_metadata(markdown, progression[:])
 
 		# Trim excess new-lines and spaces.
 		markdown = markdown.strip()
