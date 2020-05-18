@@ -173,7 +173,7 @@ class CharacterClass:
 		# Initialize emtpy markdown to return.
 		markdown = ''
 
-		# Here, "visited" stores features that have been seen.
+		# Here, 'visited' stores features that have been seen.
 		visited = set([])
 
 		# Loop through all character levels, and all features.
@@ -230,10 +230,10 @@ class CharacterClass:
 
 
 # here is an example of the app in use.
-if __name__ == "__main__":
+if __name__ == '__main__':
 	# currently only fighter data exists!
 	# its not that it won't work with other classes,
 	# its just that the other classes do not exist.
-	fighter = CharacterClass("fighter")
+	fighter = CharacterClass('fighter')
 	# this app prints the markdown features of a fighter.
 	print(fighter)
