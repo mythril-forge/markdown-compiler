@@ -202,18 +202,26 @@ class CharacterClass:
 
 		# Check if this ability has any sub-options.
 		# if there are options...
+		markdown += '\n'
 		if feature in self.data['options']:
 			options = self.data['options'][feature]
 			for option in options:
 				markdown += self.compose_markdown_feature(option)
 
 		# Trim excess new-lines and spaces.
-		markdown = markdown.replace('# ', '## ')
 		markdown = markdown.strip()
 		markdown += '\n\n'
+		markdown = markdown.replace('# ', '## ')
 
 		# Return fully-compiled markdown.
 		return markdown
 
-fighter = CharacterClass("fighter")
-print(fighter)
+
+# here is an example of the app in use.
+if __name__ == "__main__":
+	# currently only fighter data exists!
+	# its not that it won't work with other classes,
+	# its just that the other classes do not exist.
+	fighter = CharacterClass("fighter")
+	# this app prints the markdown features of a fighter.
+	print(fighter)
