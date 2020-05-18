@@ -31,14 +31,14 @@ class CharacterClass:
 		# Determine class URL.
 		class_url = repo_url
 		class_url += 'source/'
-		class_url += f'{self.version}'
+		class_url += f'{self.version}/'
 		class_url += 'vocations/classes/'
 		class_url += f'{self.char_class}/'
 
 		# Determine features URL.
 		features_url = repo_url
 		features_url += 'source/'
-		features_url += f'{self.version}'
+		features_url += f'{self.version}/'
 		features_url += 'abilities/features/'
 
 		# Gather items into a single urls object.
