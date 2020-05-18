@@ -85,7 +85,7 @@ def read_levels(*levels):
 # look to parse markdown text.
 # there are several "tags" in the text.
 # they look like this: {@tag} or {@tag some strings}
-def parse_metadata(text, levels=None):
+def parse_metadata(text, levels=None, depth=0):
 	tag = re.search(r'{@.*?(?= |})', text)
 	if tag is None:
 		# There are no special tags in the text.
@@ -99,7 +99,7 @@ def parse_metadata(text, levels=None):
 
 	# Recursively clean the right side of the text first.
 	# This takes care of any nested text-tagging.
-	right_text = parse_metadata(right_text, levels)
+	right_text = parse_metadata(right_text, levels, depth+1)
 
 	# Since the right text is cleaned, we can safely find
 	# text leading to the next available closing brace.
@@ -126,12 +126,12 @@ def parse_metadata(text, levels=None):
 	# tag = re.sub(r'(\*|`|_)+', '', tag)
 
 	if tag == 'levels':
+		# markdownify add all levels.
 		middle_text = read_levels(*levels)
-		# Actions are italicized.
-		# middle_text = f'*{middle_text}*'
 
 	elif tag == 'level':
-		middle_text = read_levels(levels.pop())
+		# markdownify a specific level.
+		middle_text = read_levels(levels[depth])
 
 	else:
 		print('\n== EXCEPTION ==')
