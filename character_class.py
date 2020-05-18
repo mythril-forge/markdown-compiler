@@ -7,16 +7,17 @@ from helpers import parse_metadata
 
 
 class CharacterClass:
-	def __init__(self, char_class):
+	def __init__(self, char_class, version='homebrew'):
 
 		# Set character class
 		self.char_class = char_class
+		self.version = version
 
 		# Set hardcoded repository information.
 		self.references = {
 			'website': 'raw.githubusercontent.com',
 			'account': 'mythril-forge',
-			'repository': 'homebrew-class-data',
+			'repository': 'character-data',
 			'branch': 'dev'
 		}
 
@@ -29,12 +30,16 @@ class CharacterClass:
 
 		# Determine class URL.
 		class_url = repo_url
-		class_url += 'source/vocations/classes/'
+		class_url += 'source/'
+		class_url += f'{self.version}/'
+		class_url += 'vocations/classes/'
 		class_url += f'{self.char_class}/'
 
 		# Determine features URL.
 		features_url = repo_url
-		features_url += 'source/abilities/features/'
+		features_url += 'source/'
+		features_url += f'{self.version}/'
+		features_url += 'abilities/features/'
 
 		# Gather items into a single urls object.
 		self.urls = {
@@ -64,27 +69,27 @@ class CharacterClass:
 		if analogues_res.status_code == 200:
 			analogues = analogues_res.json()
 
-		# Determine changelog metadata URL.
-		changelog_url = features_url
-		changelog_url += 'metadata/changelog.json'
-		changelog_res = requests.get(changelog_url)
-		if changelog_res.status_code == 200:
-			changelog = changelog_res.json()
-
-		# Determine changelog metadata URL.
+		# Determine options metadata URL.
 		options_url = features_url
 		options_url += 'metadata/options.json'
 		options_res = requests.get(options_url)
 		if options_res.status_code == 200:
 			options = options_res.json()
 
+		# # Determine changelog metadata URL.
+		# changelog_url = features_url
+		# changelog_url += 'metadata/changelog.json'
+		# changelog_res = requests.get(changelog_url)
+		# if changelog_res.status_code == 200:
+		# 	changelog = changelog_res.json()
+
 		# Gather items into a single data object.
 		self.data = {
 			'analogues': analogues,
-			'changelog': changelog,
 			'foundation': foundation,
 			'progression': progression,
 			'options': options,
+			# 'changelog': changelog,
 		}
 
 	def __repr__(self):
