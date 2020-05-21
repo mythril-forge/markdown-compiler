@@ -1,9 +1,10 @@
 # downloaded pip libraries
 import time
 import requests
+import re
 from slugify import slugify
 # internal libraries
-from helpers import parse_metadata
+from helpers import read_levels
 
 
 class CharacterClass:
@@ -197,6 +198,7 @@ class CharacterClass:
 
 
 	def compose_markdown_feature(self, feature, progression):
+
 		# Generate a sluggy.
 		slug = feature.replace('\'','')
 		slug = slugify(slug)
@@ -218,7 +220,7 @@ class CharacterClass:
 				markdown += self.compose_markdown_feature(option, progression)
 
 		# Parse embedded metadata tags.
-		markdown = parse_metadata(markdown, progression[:])
+		markdown = self.parse_metadata(markdown, feature, progression)
 
 		# Trim excess new-lines and spaces.
 		markdown = markdown.strip()
@@ -229,11 +231,91 @@ class CharacterClass:
 		return markdown
 
 
+	# look to parse markdown text.
+	# there are several "tags" in the text.
+	# they look like this: {@tag} or {@tag some strings}
+	def parse_metadata( self, text, feature, progression, depth = 0):
+		tag = re.search(r'{@.*?(?= |})', text)
+		if tag is None:
+
+			# There are no special tags in the text.
+			return text
+
+		# Split left, middle, and right based on tag result.
+		# The tag is the middle, but we will be deleting it.
+		left_text = text[:tag.span()[0]]
+		right_text = text[tag.span()[1]:]
+		tag = tag.group()[2:]
+
+		# # == HACK ==
+		# # sometimes there is a mismatch of progression versus
+		# # the actual number of {@level} tags (depth).
+		# # this gives index out of bounds.
+		# # adding 0 works but really is bad practice.
+		# progression.append(0)
+
+		# Recursively clean the right side of the text first.
+		# This takes care of any nested text-tagging.
+		params = [right_text, feature, progression, depth+1]
+		right_text = self.parse_metadata(*params)
+
+		# Since the right text is cleaned, we can safely find
+		# text leading to the next available closing brace.
+		middle_text = re.search(r'.*?(?=})', right_text)
+		right_text = right_text[middle_text.span()[1] + 1:]
+		middle_text = middle_text.group()
+
+		# == NOTE ==
+		# Now there are four variables.
+		# 1. tag
+		# 2. left_text
+		# 3. right_text
+		# 4. middle_text
+
+		# # Print debugging =^_^=
+		# print('\n== DATA ==')
+		# print('left:', left_text)
+		# print('right:', right_text)
+		# print('center:', middle_text)
+		# print('tag:', tag)
+
+		# # Remove "*", "`", and "_" from middle_text & tag.
+		# middle_text = re.sub(r'(\*|`|_)+', '', middle_text)
+		# tag = re.sub(r'(\*|`|_)+', '', tag)
+
+		if tag == 'levels':
+			# markdownify add all levels.
+			middle_text = read_levels(*progression)
+
+		elif tag == 'level':
+			# markdownify a specific level.
+			print(depth)
+			print(progression)
+			middle_text = read_levels(progression[depth])
+
+		elif tag == 'class':
+			# markdownify a specific level.
+			middle_text = self.char_class
+
+		else:
+			print('\n== EXCEPTION ==')
+			print('left:', left_text)
+			print('right:', right_text)
+			print('center:', middle_text)
+			print('tag:', tag)
+			input()
+			# raise Exception('invalid tag')
+			middle_text = "<<NULL ERROR>>"
+
+		# Return post-formatted text.
+		return left_text + middle_text + right_text
+
+
 # here is an example of the app in use.
 if __name__ == '__main__':
 	# currently only fighter data exists!
 	# its not that it won't work with other classes,
 	# its just that the other classes do not exist.
-	fighter = CharacterClass('fighter')
+	my_class = CharacterClass('barbarian')
 	# this app prints the markdown features of a fighter.
-	print(fighter)
+	print(my_class)
