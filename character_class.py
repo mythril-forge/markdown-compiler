@@ -3,6 +3,7 @@ import time
 import requests
 import re
 from slugify import slugify
+
 # internal libraries
 from helpers import read_levels
 
@@ -234,7 +235,7 @@ class CharacterClass:
 	# look to parse markdown text.
 	# there are several "tags" in the text.
 	# they look like this: {@tag} or {@tag some strings}
-	def parse_metadata( self, text, feature, progression, depth = 0):
+	def parse_metadata(self, text, feature, progression, depth = 0):
 		tag = re.search(r'{@.*?(?= |})', text)
 		if tag is None:
 
@@ -283,7 +284,17 @@ class CharacterClass:
 		# middle_text = re.sub(r'(\*|`|_)+', '', middle_text)
 		# tag = re.sub(r'(\*|`|_)+', '', tag)
 
-		if tag == 'levels':
+		if tag == 'class':
+			# markdownify a specific level.
+			middle_text = self.char_class
+
+		elif depth >= len(progression):
+			# == HACK ==
+			# depth is too far...
+			middle_text = '**EXCEPTION**'
+			pass
+
+		elif tag == 'levels':
 			# markdownify add all levels.
 			middle_text = read_levels(*progression)
 
@@ -292,10 +303,6 @@ class CharacterClass:
 			print(depth)
 			print(progression)
 			middle_text = read_levels(progression[depth])
-
-		elif tag == 'class':
-			# markdownify a specific level.
-			middle_text = self.char_class
 
 		else:
 			print('\n== EXCEPTION ==')
