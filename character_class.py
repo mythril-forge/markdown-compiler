@@ -71,6 +71,13 @@ class CharacterClass:
 		if hierarchy_res.status_code == 200:
 			hierarchy = hierarchy_res.json()
 
+		# Determine variables metadata URL.
+		variables_url = features_url
+		variables_url += 'metadata/variables.json'
+		variables_res = requests.get(variables_url)
+		if variables_res.status_code == 200:
+			variables = variables_res.json()
+
 		# Determine foundation metadata URL.
 		foundation_url = class_url
 		foundation_url += 'metadata/foundation.json'
@@ -96,10 +103,11 @@ class CharacterClass:
 		# Gather items into a single data object.
 		self.data = {
 			'analogues': analogues,
-			'foundation': foundation,
-			'progression': progression,
-			'hierarchy': hierarchy,
 			# 'changelog': changelog,
+			'foundation': foundation,
+			'hierarchy': hierarchy,
+			'progression': progression,
+			'variables': variables,
 		}
 
 	def __repr__(self):
