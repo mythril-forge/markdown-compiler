@@ -57,19 +57,19 @@ class CharacterClass:
 		if analogues_res.status_code == 200:
 			analogues = analogues_res.json()
 
-		# Determine hierarchy metadata URL.
-		hierarchy_url = features_url
-		hierarchy_url += 'metadata/hierarchy.json'
-		hierarchy_res = requests.get(hierarchy_url)
-		if hierarchy_res.status_code == 200:
-			hierarchy = hierarchy_res.json()
-
 		# # Determine changelog metadata URL.
 		# changelog_url = features_url
 		# changelog_url += 'metadata/changelog.json'
 		# changelog_res = requests.get(changelog_url)
 		# if changelog_res.status_code == 200:
 		# 	changelog = changelog_res.json()
+
+		# Determine shared hierarchical metadata URL.
+		hierarchy_url = features_url
+		hierarchy_url += 'metadata/hierarchy.json'
+		hierarchy_res = requests.get(hierarchy_url)
+		if hierarchy_res.status_code == 200:
+			hierarchy = hierarchy_res.json()
 
 		# Determine foundation metadata URL.
 		foundation_url = class_url
@@ -84,6 +84,14 @@ class CharacterClass:
 		progression_res = requests.get(progression_url)
 		if progression_res.status_code == 200:
 			progression = progression_res.json()
+
+		# Determine class-level hierarchical metadata URL.
+		hierarchy_url = class_url
+		hierarchy_url += 'metadata/hierarchy.json'
+		hierarchy_res = requests.get(hierarchy_url)
+		if hierarchy_res.status_code == 200:
+			new_hierarchy = hierarchy_res.json()
+			hierarchy = {**hierarchy, **new_hierarchy}
 
 		# Gather items into a single data object.
 		self.data = {
