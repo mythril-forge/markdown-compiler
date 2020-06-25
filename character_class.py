@@ -50,20 +50,6 @@ class CharacterClass:
 			'class': class_url,
 		}
 
-		# Determine foundation metadata URL.
-		foundation_url = class_url
-		foundation_url += 'metadata/foundation.json'
-		foundation_res = requests.get(foundation_url)
-		if foundation_res.status_code == 200:
-			foundation = foundation_res.json()
-
-		# Determine progression metadata URL.
-		progression_url = class_url
-		progression_url += 'metadata/progression.json'
-		progression_res = requests.get(progression_url)
-		if progression_res.status_code == 200:
-			progression = progression_res.json()
-
 		# Determine analogues metadata URL.
 		analogues_url = features_url
 		analogues_url += 'metadata/analogues.json'
@@ -84,6 +70,20 @@ class CharacterClass:
 		# changelog_res = requests.get(changelog_url)
 		# if changelog_res.status_code == 200:
 		# 	changelog = changelog_res.json()
+
+		# Determine foundation metadata URL.
+		foundation_url = class_url
+		foundation_url += 'metadata/foundation.json'
+		foundation_res = requests.get(foundation_url)
+		if foundation_res.status_code == 200:
+			foundation = foundation_res.json()
+
+		# Determine progression metadata URL.
+		progression_url = class_url
+		progression_url += 'metadata/progression.json'
+		progression_res = requests.get(progression_url)
+		if progression_res.status_code == 200:
+			progression = progression_res.json()
 
 		# Gather items into a single data object.
 		self.data = {
