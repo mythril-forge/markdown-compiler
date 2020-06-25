@@ -71,12 +71,12 @@ class CharacterClass:
 		if analogues_res.status_code == 200:
 			analogues = analogues_res.json()
 
-		# Determine options metadata URL.
-		options_url = features_url
-		options_url += 'metadata/options.json'
-		options_res = requests.get(options_url)
-		if options_res.status_code == 200:
-			options = options_res.json()
+		# Determine hierarchy metadata URL.
+		hierarchy_url = features_url
+		hierarchy_url += 'metadata/hierarchy.json'
+		hierarchy_res = requests.get(hierarchy_url)
+		if hierarchy_res.status_code == 200:
+			hierarchy = hierarchy_res.json()
 
 		# # Determine changelog metadata URL.
 		# changelog_url = features_url
@@ -90,7 +90,7 @@ class CharacterClass:
 			'analogues': analogues,
 			'foundation': foundation,
 			'progression': progression,
-			'options': options,
+			'hierarchy': hierarchy,
 			# 'changelog': changelog,
 		}
 
@@ -212,13 +212,13 @@ class CharacterClass:
 		if feature_res.status_code == 200:
 			markdown = feature_res.text
 
-		# Check if this ability has any sub-options.
-		# if there are options...
+		# Check if this ability has any sub-hierarchy.
+		# if there are hierarchy...
 		markdown += '\n'
-		if feature in self.data['options']:
-			options = self.data['options'][feature]
-			for option in options:
-				markdown += self.compose_markdown_feature(option, progression)
+		if feature in self.data['hierarchy']:
+			hierarchy = self.data['hierarchy'][feature]
+			for subordinate in hierarchy:
+				markdown += self.compose_markdown_feature(subordinate, progression)
 
 		# Parse embedded metadata tags.
 		markdown = self.parse_metadata(markdown, feature, progression)
