@@ -326,10 +326,11 @@ class CharacterClass:
 
 		elif tag in self.data['variables']:
 			variable_data = self.data['variables'][tag]
-
 			# grab special text from variables.
 			output = variable_data['class'].get(self.char_class)
 			if output is not None:
+				params = [output, feature, progression, depth]
+				output = self.parse_metadata(*params)
 				middle_text = output
 			else:
 				middle_text = ''
@@ -346,6 +347,6 @@ if __name__ == '__main__':
 	# currently only fighter data exists!
 	# its not that it won't work with other classes,
 	# its just that the other classes do not exist.
-	my_class = CharacterClass('barbarian')
+	my_class = CharacterClass('cleric')
 	# this app prints the markdown features of a fighter.
 	print(my_class)
