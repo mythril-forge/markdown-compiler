@@ -110,8 +110,13 @@ class CharacterClass:
 			'variables': variables,
 		}
 
+		# compose markdown
+		self.markdown = self.compose_all_markdown_features()
+
+
 	def __repr__(self):
-		return self.compose_all_markdown_features()
+		return self.markdown
+
 
 	def collect_progression_headers(self):
 		headers = set()
@@ -150,7 +155,6 @@ class CharacterClass:
 		return feature_progression
 
 
-
 	def collect_column_widths(self):
 
 		# This collection stores features as keys,
@@ -174,7 +178,6 @@ class CharacterClass:
 				# arrays and integers are no good for this...
 				pass
 		return column_widths
-
 
 
 	def compose_markdown_progression_table(self):
@@ -271,9 +274,14 @@ class CharacterClass:
 		# # adding 0 works but really is bad practice.
 		# progression.append(0)
 
+		# prep depth of levels
+		child_depth = depth
+		if tag == 'level':
+			child_depth += 1
+
 		# Recursively clean the right side of the text first.
 		# This takes care of any nested text-tagging.
-		params = [right_text, feature, progression, depth+1]
+		params = [right_text, feature, progression, child_depth]
 		right_text = self.parse_metadata(*params)
 
 		# Since the right text is cleaned, we can safely find
@@ -304,31 +312,25 @@ class CharacterClass:
 			# markdownify a specific level.
 			middle_text = self.char_class
 
-		elif depth >= len(progression):
-			# == HACK ==
-			# depth is too far...
-			middle_text = '**EXCEPTION**'
-			pass
-
 		elif tag == 'levels':
+			if depth >= len(progression):
+				raise Exception('depth is too deep!')
 			# markdownify add all levels.
 			middle_text = read_levels(*progression)
 
 		elif tag == 'level':
+			if depth >= len(progression):
+				raise Exception('depth is too deep!')
 			# markdownify a specific level.
-			print(depth)
-			print(progression)
 			middle_text = read_levels(progression[depth])
 
+		elif tag in self.data['variables']:
+			variable = tag
+			# grab special text from variables.
+			middle_text = self.data['variables'][variable]['class'][self.char_class]
+
 		else:
-			print('\n== EXCEPTION ==')
-			print('left:', left_text)
-			print('right:', right_text)
-			print('center:', middle_text)
-			print('tag:', tag)
-			input()
-			# raise Exception('invalid tag')
-			middle_text = "<<NULL ERROR>>"
+			raise Exception('invalid tag!')
 
 		# Return post-formatted text.
 		return left_text + middle_text + right_text
