@@ -325,9 +325,14 @@ class CharacterClass:
 			middle_text = read_levels(progression[depth])
 
 		elif tag in self.data['variables']:
-			variable = tag
+			variable_data = self.data['variables'][tag]
+
 			# grab special text from variables.
-			middle_text = self.data['variables'][variable]['class'][self.char_class]
+			output = variable_data['class'].get(self.char_class)
+			if output is not None:
+				middle_text = output
+			else:
+				middle_text = ''
 
 		else:
 			raise Exception('invalid tag!')
