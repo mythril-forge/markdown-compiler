@@ -312,17 +312,32 @@ class CharacterClass:
 			# markdownify a specific level.
 			middle_text = self.char_class
 
+		elif tag == 'bonus':
+			# == HACK ==
+			# using hacky **IGNORE** tags to delete lines.
+			# no good!
+			middle_text = middle_text[1:]
+			no_bonus = re.search('\*\*IGNORE\*\*', middle_text)
+			if no_bonus is not None:
+				middle_text = ''
+			else:
+				pass
+
 		elif tag == 'levels':
 			if depth >= len(progression):
-				raise Exception('depth is too deep!')
-			# markdownify add all levels.
-			middle_text = read_levels(*progression)
+				# raise Exception('depth is too deep!')
+				middle_text = '**IGNORE**'
+			else:
+				# markdownify add all levels.
+				middle_text = read_levels(*progression)
 
 		elif tag == 'level':
 			if depth >= len(progression):
-				raise Exception('depth is too deep!')
-			# markdownify a specific level.
-			middle_text = read_levels(progression[depth])
+				# raise Exception('depth is too deep!')
+				middle_text = '**IGNORE**'
+			else:
+				# markdownify a specific level.
+				middle_text = read_levels(progression[depth])
 
 		elif tag in self.data['variables']:
 			variable_data = self.data['variables'][tag]
@@ -336,7 +351,7 @@ class CharacterClass:
 				middle_text = ''
 
 		else:
-			raise Exception('invalid tag!')
+			raise Exception('invalid tag!', tag)
 
 		# Return post-formatted text.
 		return left_text + middle_text + right_text
@@ -347,6 +362,6 @@ if __name__ == '__main__':
 	# currently only fighter data exists!
 	# its not that it won't work with other classes,
 	# its just that the other classes do not exist.
-	my_class = CharacterClass('cleric')
+	my_class = CharacterClass('barbarian')
 	# this app prints the markdown features of a fighter.
 	print(my_class)
