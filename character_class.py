@@ -1,9 +1,11 @@
 # downloaded pip libraries
 import time
 import requests
+import re
 from slugify import slugify
+
 # internal libraries
-from helpers import parse_metadata
+from helpers import read_levels
 
 
 class CharacterClass:
@@ -48,6 +50,34 @@ class CharacterClass:
 			'class': class_url,
 		}
 
+		# Determine analogues metadata URL.
+		analogues_url = features_url
+		analogues_url += 'metadata/analogues.json'
+		analogues_res = requests.get(analogues_url)
+		if analogues_res.status_code == 200:
+			analogues = analogues_res.json()
+
+		# # Determine changelog metadata URL.
+		# changelog_url = features_url
+		# changelog_url += 'metadata/changelog.json'
+		# changelog_res = requests.get(changelog_url)
+		# if changelog_res.status_code == 200:
+		# 	changelog = changelog_res.json()
+
+		# Determine shared hierarchical metadata URL.
+		hierarchy_url = features_url
+		hierarchy_url += 'metadata/hierarchy.json'
+		hierarchy_res = requests.get(hierarchy_url)
+		if hierarchy_res.status_code == 200:
+			hierarchy = hierarchy_res.json()
+
+		# Determine variables metadata URL.
+		variables_url = features_url
+		variables_url += 'metadata/variables.json'
+		variables_res = requests.get(variables_url)
+		if variables_res.status_code == 200:
+			variables = variables_res.json()
+
 		# Determine foundation metadata URL.
 		foundation_url = class_url
 		foundation_url += 'metadata/foundation.json'
@@ -62,38 +92,31 @@ class CharacterClass:
 		if progression_res.status_code == 200:
 			progression = progression_res.json()
 
-		# Determine analogues metadata URL.
-		analogues_url = features_url
-		analogues_url += 'metadata/analogues.json'
-		analogues_res = requests.get(analogues_url)
-		if analogues_res.status_code == 200:
-			analogues = analogues_res.json()
-
-		# Determine options metadata URL.
-		options_url = features_url
-		options_url += 'metadata/options.json'
-		options_res = requests.get(options_url)
-		if options_res.status_code == 200:
-			options = options_res.json()
-
-		# # Determine changelog metadata URL.
-		# changelog_url = features_url
-		# changelog_url += 'metadata/changelog.json'
-		# changelog_res = requests.get(changelog_url)
-		# if changelog_res.status_code == 200:
-		# 	changelog = changelog_res.json()
+		# Determine class-level hierarchical metadata URL.
+		hierarchy_url = class_url
+		hierarchy_url += 'metadata/hierarchy.json'
+		hierarchy_res = requests.get(hierarchy_url)
+		if hierarchy_res.status_code == 200:
+			new_hierarchy = hierarchy_res.json()
+			hierarchy = {**hierarchy, **new_hierarchy}
 
 		# Gather items into a single data object.
 		self.data = {
 			'analogues': analogues,
-			'foundation': foundation,
-			'progression': progression,
-			'options': options,
 			# 'changelog': changelog,
+			'foundation': foundation,
+			'hierarchy': hierarchy,
+			'progression': progression,
+			'variables': variables,
 		}
 
+		# compose markdown
+		self.markdown = self.compose_all_markdown_features()
+
+
 	def __repr__(self):
-		return self.compose_all_markdown_features()
+		return self.markdown
+
 
 	def collect_progression_headers(self):
 		headers = set()
@@ -132,7 +155,6 @@ class CharacterClass:
 		return feature_progression
 
 
-
 	def collect_column_widths(self):
 
 		# This collection stores features as keys,
@@ -158,7 +180,6 @@ class CharacterClass:
 		return column_widths
 
 
-
 	def compose_markdown_progression_table(self):
 		pass
 
@@ -173,7 +194,7 @@ class CharacterClass:
 		# Initialize emtpy markdown to return.
 		markdown = ''
 
-		# Here, "visited" stores features that have been seen.
+		# Here, 'visited' stores features that have been seen.
 		visited = set([])
 
 		# Loop through all character levels, and all features.
@@ -197,6 +218,7 @@ class CharacterClass:
 
 
 	def compose_markdown_feature(self, feature, progression):
+
 		# Generate a sluggy.
 		slug = feature.replace('\'','')
 		slug = slugify(slug)
@@ -209,16 +231,16 @@ class CharacterClass:
 		if feature_res.status_code == 200:
 			markdown = feature_res.text
 
-		# Check if this ability has any sub-options.
-		# if there are options...
+		# Check if this ability has any sub-hierarchy.
+		# if there are hierarchy...
 		markdown += '\n'
-		if feature in self.data['options']:
-			options = self.data['options'][feature]
-			for option in options:
-				markdown += self.compose_markdown_feature(option, progression)
+		if feature in self.data['hierarchy']:
+			hierarchy = self.data['hierarchy'][feature]
+			for subordinate in hierarchy:
+				markdown += self.compose_markdown_feature(subordinate, progression)
 
 		# Parse embedded metadata tags.
-		markdown = parse_metadata(markdown, progression[:])
+		markdown = self.parse_metadata(markdown, feature, progression)
 
 		# Trim excess new-lines and spaces.
 		markdown = markdown.strip()
@@ -229,11 +251,96 @@ class CharacterClass:
 		return markdown
 
 
+	# look to parse markdown text.
+	# there are several "tags" in the text.
+	# they look like this: {@tag} or {@tag some strings}
+	def parse_metadata(self, text, feature, progression, depth = 0):
+		tag = re.search(r'{@.*?(?= |})', text)
+		if tag is None:
+
+			# There are no special tags in the text.
+			return text
+
+		# Split left, middle, and right based on tag result.
+		# The tag is the middle, but we will be deleting it.
+		left_text = text[:tag.span()[0]]
+		right_text = text[tag.span()[1]:]
+		tag = tag.group()[2:]
+
+		# # == HACK ==
+		# # sometimes there is a mismatch of progression versus
+		# # the actual number of {@level} tags (depth).
+		# # this gives index out of bounds.
+		# # adding 0 works but really is bad practice.
+		# progression.append(0)
+
+		# prep depth of levels
+		child_depth = depth
+		if tag == 'level':
+			child_depth += 1
+
+		# Recursively clean the right side of the text first.
+		# This takes care of any nested text-tagging.
+		params = [right_text, feature, progression, child_depth]
+		right_text = self.parse_metadata(*params)
+
+		# Since the right text is cleaned, we can safely find
+		# text leading to the next available closing brace.
+		middle_text = re.search(r'.*?(?=})', right_text)
+		right_text = right_text[middle_text.span()[1] + 1:]
+		middle_text = middle_text.group()
+
+		# == NOTE ==
+		# Now there are four variables.
+		# 1. tag
+		# 2. left_text
+		# 3. right_text
+		# 4. middle_text
+
+		# # Print debugging =^_^=
+		# print('\n== DATA ==')
+		# print('left:', left_text)
+		# print('right:', right_text)
+		# print('center:', middle_text)
+		# print('tag:', tag)
+
+		# # Remove "*", "`", and "_" from middle_text & tag.
+		# middle_text = re.sub(r'(\*|`|_)+', '', middle_text)
+		# tag = re.sub(r'(\*|`|_)+', '', tag)
+
+		if tag == 'class':
+			# markdownify a specific level.
+			middle_text = self.char_class
+
+		elif tag == 'levels':
+			if depth >= len(progression):
+				raise Exception('depth is too deep!')
+			# markdownify add all levels.
+			middle_text = read_levels(*progression)
+
+		elif tag == 'level':
+			if depth >= len(progression):
+				raise Exception('depth is too deep!')
+			# markdownify a specific level.
+			middle_text = read_levels(progression[depth])
+
+		elif tag in self.data['variables']:
+			variable = tag
+			# grab special text from variables.
+			middle_text = self.data['variables'][variable]['class'][self.char_class]
+
+		else:
+			raise Exception('invalid tag!')
+
+		# Return post-formatted text.
+		return left_text + middle_text + right_text
+
+
 # here is an example of the app in use.
-if __name__ == "__main__":
+if __name__ == '__main__':
 	# currently only fighter data exists!
 	# its not that it won't work with other classes,
 	# its just that the other classes do not exist.
-	fighter = CharacterClass("fighter")
+	my_class = CharacterClass('barbarian')
 	# this app prints the markdown features of a fighter.
-	print(fighter)
+	print(my_class)
