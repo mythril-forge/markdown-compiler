@@ -230,6 +230,9 @@ class CharacterClass:
 		feature_res = requests.get(feature_url)
 		if feature_res.status_code == 200:
 			markdown = feature_res.text
+		else:
+			print(slug)
+			print(feature)
 
 		# Check if this ability has any sub-hierarchy.
 		# if there are hierarchy...
@@ -365,3 +368,5 @@ if __name__ == '__main__':
 	my_class = CharacterClass('barbarian')
 	# this app prints the markdown features of a fighter.
 	print(my_class)
+	with open('output.md', 'w') as file:
+		file.write(my_class.markdown)
