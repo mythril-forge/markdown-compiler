@@ -6,112 +6,164 @@ import json
 import os
 import re
 
-website = 'github.com'
-account = 'mythril-forge'
-project = 'character-data'
-branch = 'dev'
-data_root = f'{project}-{branch}'
 
-def get_data_repo():
-	url = (
-		'https://'
-		f'{website}/'
-		f'{account}/'
-		f'{project}/archive/'
-		f'{branch}.zip'
-	)
-	req = requests.get(url, stream=True)
-	zip = ZipFile(BytesIO(req.content))
-	zip.extractall()
 
-def collect_data():
-	def make_slugs(slugs, filename):
+def collect_features():
+	# Set hardcoded repository information.
+	references = {
+		'website': 'github.com',
+		'account': 'mythril-forge',
+		'project': 'character-data',
+		'branch': 'dev',
+		'version': 'homebrew',
+	}
+	redownload = False
+
+	# Determine repository download URL.
+	download_url = 'https://'
+	download_url += f'{references["website"]}/'
+	download_url += f'{references["account"]}/'
+	download_url += f'{references["project"]}/'
+	download_url += 'archive/'
+	download_url += f'{references["branch"]}.zip'
+
+	# Determine downloaded file reference.
+	download_dir = './downloads/' # /archive-*...?
+	download_dir += f'{references["project"]}-'
+	download_dir += f'{references["branch"]}/'
+
+	# Determine feature data directory reference.
+	features_dir = download_dir
+	features_dir += 'source/'
+	features_dir += f'{references["version"]}/'
+	features_dir += 'abilities/features/'
+
+	if redownload or not os.path.isdir(download_dir):
+		# Download a zip of the data repository; extract it.
+		req = requests.get(download_url, stream=True)
+		zip = ZipFile(BytesIO(req.content))
+		zip.extractall('./downloads/')
+
+	# Create slugs from walking the features_dir.
+	# The slugs are meant to have no file extention.
+	def make_slugs(feature_names, filename):
 		expression = r'^(.*)(?=\.(.+))'
-		slug = re.match(expression, filename)
-		slugs.add(slug.group())
-		return slugs
+		feature_name = re.match(expression, filename)
+		feature_names.add(feature_name.group())
+		return feature_names
 
-	folder = f'{data_root}/source/homebrew/abilities/features/'
-	_, _, filenames = next(os.walk(folder))
-	slugs = reduce(make_slugs, filenames, set([]))
+	# Use this reducer to create a set of all features.
+	_, _, filenames = next(os.walk(features_dir))
+	feature_names = reduce(make_slugs, filenames, set([]))
 
-	# create a features dictionary, and populate it
-	features = {}
-	for slug in slugs:
-		# get metadata
-		with open(folder + slug + '.json', 'r') as file:
-			metadata = json.load(file)
-		# get markdown
-		with open(folder + slug + '.md', 'r') as file:
-			markdown = file.read()
-		# combine for full feature data
-		feature = {
-			'markdown': markdown,
-			'metadata': metadata,
-		}
-		# add to features dictionary
-		features[slug] = feature
+	# Create base features dictionary object.
+	features = {} # *this will be returned later*
 
-	# return populated features dictionary
+	# Loop through all the features.
+	for feature_name in feature_names:
+
+		# Get data.
+		filepath = features_dir + feature_name + '.json'
+		with open(filepath) as file:
+			feature_data = json.load(file)
+
+		# Get markdown template.
+		filepath = features_dir + feature_name + '.md'
+		with open(filepath) as file:
+			template = file.read()
+
+		# Combine for full feature data summary.
+		feature_data['template'] = template
+		# Add to features dictionary.
+		features[feature_name] = feature_data
+
+	# Return populated features dictionary.
 	return features
 
-# Step 1: Obtain data.
-get_data_repo()
-features = collect_data()
 
-def compile_progression(character_class):
-	def is_class_feature(slug):
-		# using the slug, look up feature in features.
-		feature = features[slug]
-		metadata = feature['metadata']
-		# determine if the feature specificies this class.
-		if 'classes' in metadata:
-			if character_class in metadata['classes']:
-				# determine if the feature has any progression.
-				class_metadata = metadata['classes'][character_class]
-				if 'progression' in class_metadata:
-					return True
-		# failed one of the determinations.
-		return False
 
-	# class features are a list of slugs.
-	# they can be used for easy lookup with features.
-	class_features = filter(is_class_feature, features)
+def craft_class_features(features):
+	# Create base class_features dictionary object.
+	class_features = {} # *this will be returned later*
 
-	# the class table is for user indexing.
-	# its usually shown at the front of the class description.
-	class_table = {}
-	for level in range(1, 21):
-		class_table[level] = {
-			'Features': [],
-		}
-	table_columns = ['Level', 'Features']
+	# Loop through all given features.
+	# Each feature may exist for zero or many classes.
+	# This works fine in memory;
+	# many classes' entries may point to the same feature.
+	for feature_name, feature_data in features.items():
+		for class_name in feature_data.get('classes', {}):
+			if 'progression' in feature_data['classes'][class_name]:
+				if class_name not in class_features:
+					class_features[class_name] = {}
+				class_features[class_name][feature_name] = feature_data
 
-	# loop through all class features.
-	for slug in class_features:
-		feature = features[slug]
-		# the progression is whats important for the table.
-		progression = feature['metadata']['classes'][character_class]['progression']
-		progression = sorted(progression, key = lambda x: x['Level'])
-		# each container has data on the level.
-		for container in progression:
-			for column, value in container.items():
-				if column == 'Level':
-					pass
-				elif column == 'Features':
-					class_table[container['Level']][column].append(value)
-				else:
-					# special column (not feature or level)
-					if column not in table_columns:
-						for level in range(1, 21):
-							class_table[level][column] = '&mdash;'
-						table_columns.append(column)
-					for level in range(container['Level'], 21):
-						class_table[level][column] = value
-	print(json.dumps(class_table))
+	# Return populated class_features dictionary.
+	return class_features
 
-# cleric
-# rogue
-# fighter
-# wizard
-compile_progression('fighter')
+
+
+all_features = collect_features()
+print(json.dumps(all_features))
+input('\n---\nFeature Catalog shown above.\n---\n')
+all_class_features = craft_class_features(all_features)
+print(json.dumps(all_class_features))
+input('\n---\nFeatures by Class shown above.\n---\n')
+
+
+
+def craft_progression_tables(features, class_features):
+	# Create a sorted_class_features dictionary object.
+	# Also create a class_progression dictionary object.
+	sorted_class_features = {}
+	class_progression = {} # *this will be returned later*
+
+	# Loop through each and every class_name.
+	for class_name in class_features:
+
+		# Seed the class progression.
+		class_progression_columns = ['Level, Features']
+		class_progression[class_name] = {}
+		for level in range(1, 21):
+			class_progression[class_name][level] = {
+				'Level': level,
+				'Features': [],
+			}
+
+		# Create an array of class features, sorted by names.
+		sorted_class_data = [*class_features[class_name].values()]
+		sorted_class_data.sort(key = lambda x: x['slug'])
+		sorted_class_features[class_name] = sorted_class_data
+
+		# Loop through each sorted feature, in order.
+		for feature_data in sorted_class_features[class_name]:
+			feature_progression = feature_data['classes'][class_name]['progression']
+			# Loop through each row of this feature's progression.
+			# They should already be sorted numerically by level.
+			for row in feature_progression:
+				level = row['Level']
+				for column, value in row.items():
+					if column == 'Level':
+						pass
+					elif column == 'Features':
+						class_progression[class_name][level][column].append(value)
+
+					# Special column (not feature or level)
+					else:
+						# Column doesn't exist yet, fill with empty.
+						if column not in class_progression_columns:
+							for entry in class_progression[class_name].values():
+								entry[column] = '&mdash;'
+							# Column has been visited.
+							class_progression_columns.append(column)
+						# Fill column data using level information.
+						for entry in class_progression[class_name].values():
+							if entry['Level'] >= row['Level']:
+								entry[column] = value
+
+		# revert and sort class progresions
+		class_progression[class_name] = [*class_progression[class_name].values()]
+		class_progression[class_name].sort(key = lambda x: x['Level'])
+
+	return class_progression
+
+craft_progression_tables(all_features, all_class_features)
