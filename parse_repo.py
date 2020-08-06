@@ -82,7 +82,7 @@ def collect_features():
 
 
 
-def craft_class_features(features):
+def compose_features_by_class(features):
 	# Create base class_features dictionary object.
 	class_features = {} # *this will be returned later*
 
@@ -92,7 +92,8 @@ def craft_class_features(features):
 	# many classes' entries may point to the same feature.
 	for feature_name, feature_data in features.items():
 		for class_name in feature_data.get('classes', {}):
-			if 'progression' in feature_data['classes'][class_name]:
+			class_info = feature_data['classes'][class_name]
+			if 'progression' in class_info:
 				if class_name not in class_features:
 					class_features[class_name] = {}
 				class_features[class_name][feature_name] = feature_data
@@ -102,68 +103,71 @@ def craft_class_features(features):
 
 
 
-all_features = collect_features()
-print(json.dumps(all_features))
-input('\n---\nFeature Catalog shown above.\n---\n')
-all_class_features = craft_class_features(all_features)
-print(json.dumps(all_class_features))
-input('\n---\nFeatures by Class shown above.\n---\n')
-
-
-
-def craft_progression_tables(features, class_features):
+def compose_class_progressions(features, class_features):
 	# Create a sorted_class_features dictionary object.
 	# Also create a class_progression dictionary object.
 	sorted_class_features = {}
-	class_progression = {} # *this will be returned later*
+	class_progressions = {} # *this will be returned later*
+
 
 	# Loop through each and every class_name.
 	for class_name in class_features:
-
-		# Seed the class progression.
-		class_progression_columns = ['Level, Features']
-		class_progression[class_name] = {}
+		# Initialize empty array to hold class progression rows.
+		# Each row will have a distinct level.
+		# ---
+		# An object or dictionary could have been used, but...
+		# This data will be ported over to JSON.
+		# JSON doesn't support integer keys. I don't like that.
+		class_progression = []
+		class_progressions[class_name] = class_progression
 		for level in range(1, 21):
-			class_progression[class_name][level] = {
+			class_progression.append({
 				'Level': level,
 				'Features': [],
-			}
+			})
 
 		# Create an array of class features, sorted by names.
-		sorted_class_data = [*class_features[class_name].values()]
-		sorted_class_data.sort(key = lambda x: x['slug'])
-		sorted_class_features[class_name] = sorted_class_data
+		# These only contain certain features; specifically, the
+		# ones for this class that appear in the progression.
+		sorted_features = class_features[class_name].values()
+		sorted_features = list(sorted_features)
+		sorted_features.sort(key = lambda x: x['slug'])
 
-		# Loop through each sorted feature, in order.
-		for feature_data in sorted_class_features[class_name]:
-			feature_progression = feature_data['classes'][class_name]['progression']
+		# Loop through each sorted feature's data, in order.
+		for feature in sorted_features:
+
+			# Here, progression is short for feature progression.
+			# (rather than the whole class progression)
+			class_info = feature['classes'][class_name]
+			progression = class_info['progression']
+			progression.sort(key = lambda x: x['Level'])
+
 			# Loop through each row of this feature's progression.
 			# They should already be sorted numerically by level.
-			for row in feature_progression:
+			for row in progression:
 				level = row['Level']
 				for column, value in row.items():
 					if column == 'Level':
 						pass
 					elif column == 'Features':
-						class_progression[class_name][level][column].append(value)
-
-					# Special column (not feature or level)
+						filterer = lambda row: row['Level'] == level
+						[entry] = [*filter(filterer, class_progression)]
+						entry[column].append(value)
 					else:
-						# Column doesn't exist yet, fill with empty.
-						if column not in class_progression_columns:
-							for entry in class_progression[class_name].values():
-								entry[column] = '&mdash;'
-							# Column has been visited.
-							class_progression_columns.append(column)
-						# Fill column data using level information.
-						for entry in class_progression[class_name].values():
+						for entry in class_progression:
+							if column not in entry:
+								entry[column] = None
 							if entry['Level'] >= row['Level']:
 								entry[column] = value
 
 		# revert and sort class progresions
-		class_progression[class_name] = [*class_progression[class_name].values()]
-		class_progression[class_name].sort(key = lambda x: x['Level'])
+		class_progression.sort(key = lambda row: row['Level'])
+		class_progressions[class_name] = class_progression
 
-	return class_progression
+	return class_progressions
 
-craft_progression_tables(all_features, all_class_features)
+
+# These variables should be exported by themselves.
+features = collect_features()
+features_by_class = compose_features_by_class(features)
+class_progressions = compose_class_progressions(features, features_by_class)
