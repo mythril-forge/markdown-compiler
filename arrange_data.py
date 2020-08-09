@@ -1,4 +1,4 @@
-def compose_class_features(features):
+def arrange_class_features(features):
 	'''
 	This will take in the features dataset.
 	Each feature in the dataset will be categorized by class.

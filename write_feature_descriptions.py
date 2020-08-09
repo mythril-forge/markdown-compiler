@@ -13,19 +13,19 @@ def generate_descriptions(all_features):
 			# Loop through each class in the feature.
 			for class_name in feature.get('classes', {}):
 				feature_class = feature['classes'][class_name]
-				markdown = make_description(feature, class_name)
+				description = describe(feature, class_name)
 				# If the feature has children, loop through them.
 				for child_name in feature_class.get('children', {}):
 					child = all_features[child_name]
-					markdown += '\n#'
-					markdown += make_description(child, class_name)
-				# The markdown is complete for this feature_class!
-				feature_class['markdown'] = markdown
+					description += '\n#'
+					description += describe(child, class_name)
+				# The description is complete for this feature_class!
+				feature_class['description'] = description
 
 
 
-def make_description(feature, class_name):
-	markdown = feature['description_template']
+def describe(feature, class_name):
+	markdown = feature['desc_template']
 	# Track each visited text-tag.
 	visited_tags = []
 

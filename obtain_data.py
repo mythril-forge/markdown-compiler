@@ -8,7 +8,16 @@ import re
 
 
 
-def collect_features():
+def collect_features(
+	references = {
+		'website': 'github.com',
+		'account': 'mythril-forge',
+		'project': 'character-data',
+		'branch': 'dev',
+		'version': 'homebrew',
+	},
+	redownload = False,
+):
 	'''
 	This is the root of every function presented here.
 	If there is no data, it will download the JSON data.
@@ -17,15 +26,9 @@ def collect_features():
 	---
 	This function is specifically designed for class features.
 	'''
-	# Set hardcoded repository information.
-	references = {
-		'website': 'github.com',
-		'account': 'mythril-forge',
-		'project': 'character-data',
-		'branch': 'dev',
-		'version': 'homebrew',
-	}
-	redownload = False
+	# Make a copy of the references object
+	# 	in case its ever changed.
+	references = {**references}
 
 	# Determine repository download URL.
 	download_url = 'https://'
@@ -48,8 +51,8 @@ def collect_features():
 
 	if redownload or not os.path.isdir(download_dir):
 		# Download a zip of the data repository; extract it.
-		req = requests.get(download_url, stream=True)
-		zip = ZipFile(BytesIO(req.content))
+		request = requests.get(download_url, stream=True)
+		zip = ZipFile(BytesIO(request.content))
 		zip.extractall('./downloads/')
 
 	# Create slugs from walking the features_dir.
@@ -81,7 +84,7 @@ def collect_features():
 			template = file.read()
 
 		# Combine for full feature data summary.
-		feature_data['description_template'] = template
+		feature_data['desc_template'] = template
 		# Add to features dictionary.
 		features[feature_name] = feature_data
 
