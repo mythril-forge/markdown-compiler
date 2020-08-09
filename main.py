@@ -1,11 +1,11 @@
-import json
-from parse_repo import collect_features
-from parse_repo import compose_class_features
-from parse_repo import compose_class_progressions
+from obtain_data import collect_features
+from arrange_data import compose_class_features
+from arrange_data import compose_class_progressions
 from markdown_maker import generate_descriptions
 
 
-if __name__ == '__main__':
+
+def main():
 	# Obtain all features, ever.
 	all_features \
 		= collect_features()
@@ -20,3 +20,6 @@ if __name__ == '__main__':
 
 	# Ensure every feature has a description for every class.
 	generate_descriptions(all_features)
+
+if __name__ == '__main__':
+	main()
