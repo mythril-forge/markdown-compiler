@@ -18,5 +18,8 @@ def main():
 	# Create a useful progression table index for classes.
 	class_progressions = compose_class_progressions(class_features)
 
+	# Create a summary for all the classes.
+	class_summaries = generate_summaries(class_features, class_progressions)
+
 if __name__ == '__main__':
 	main()
