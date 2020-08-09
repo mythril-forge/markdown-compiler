@@ -2,54 +2,54 @@ from helpers import read_levels
 from helpers import ordinal
 from functools import reduce
 import re
-
-inf = float('inf')
-
-def make_descriptions(all_features, class_features):
-	for class_name, features in class_features.items():
-		for feature_name, feature in features.items():
-			text = make_description(feature, class_name)
-
-			# Get the class data from this feature.
-			class_feature = feature \
-				['classes']           \
-				[class_name]
-
-			# Get text for each child.
-			for child in class_feature.get('children', {}):
-				child_feature = all_features[child]
-				text += '\n#'
-				text += make_description(feature, class_name)
-
-			# Set the description.
-			class_feature['markdown'] = text
-			print(text)
+infinity = float('inf')
 
 
-# Helper function.
-def get_tag(markdown):
-	expression = r'`\{\( .+? \)\}`'
-	return re.search(expression, markdown)
+
+def generate_descriptions(all_features):
+	# Loop through all the features!
+	for feature in all_features.values():
+		if 'classes' in feature:
+			# Loop through each class in the feature.
+			for class_name in feature.get('classes', {}):
+				feature_class = feature['classes'][class_name]
+				markdown = make_description(feature, class_name)
+				# If the feature has children, loop through them.
+				for child_name in feature_class.get('children', {}):
+					child = all_features[child_name]
+					markdown += '\n#'
+					markdown += make_description(child, class_name)
+				# The markdown is complete for this feature_class!
+				feature_class['markdown'] = markdown
+
+
 
 def make_description(feature, class_name):
 	markdown = feature['description_template']
-	# List out the visited tags.
+	# Track each visited text-tag.
 	visited_tags = []
+
+	if 'classes' in feature:
+		# Get the class data from this feature.
+		feature_class = feature \
+			['classes']           \
+			[class_name]
+
+		# Certain subfeatures will not have a progression.
+		# Dont try to set progression in this case.
+		if 'progression' in feature_class:
+			# Get the progression table for this class.
+			progression = feature \
+				['classes']         \
+				[class_name]        \
+				['progression']
+			# The progression table may not be sorted. Sort it!
+			progression.sort(key = lambda x: x['Level'])
+
+	# This is where the meat of the function happens.
+	# Try to find a tag.
 	regex_tag = get_tag(markdown)
-
-	# Get the class data from this feature.
-	class_feature = feature \
-		['classes']           \
-		[class_name]
-
-	# Get the progression table for this class.
-	progression = feature \
-		['classes']         \
-		[class_name]        \
-		['progression']
-	# The progression table may not be sorted. Sort it!
-	progression.sort(key = lambda x: x['Level'])
-
+	# Transform tags into readable text while they exist.
 	while regex_tag is not None:
 		# Get indices from search result.
 		start, end = regex_tag.span()
@@ -67,10 +67,23 @@ def make_description(feature, class_name):
 			# Create and use reducer to get number of matches.
 			reducer = lambda count, tag: count + (tag == 'level')
 			matches = reduce(reducer, visited_tags, 0)
-			matches += inf if ('end-levels' in visited_tags) else 0
+			# The end-levels tag means all tags are visited.
+			if ('end-levels' in visited_tags): matches += infinity
+
+			# If tag is all-levels, add all levels ever.
+			if tag == 'all-levels':
+				# Initialize levels for this action.
+				levels = []
+				# Get all the rows in this feature.
+				for row in progression:
+					# Get the level.
+					level = row['Level']
+					levels.append(level)
+				# Add textified level signature ordinals.
+				middle = read_levels(*levels)
 
 			# Ensure index is in range of the progression table.
-			if matches < len(progression):
+			elif matches < len(progression):
 
 				# Add a single level.
 				if tag == 'level':
@@ -93,17 +106,6 @@ def make_description(feature, class_name):
 					# Add textified level signature ordinals.
 					middle = read_levels(*levels)
 
-				elif tag == 'all-levels':
-					# Initialize levels for this action.
-					levels = []
-					# Get all the rows in this feature.
-					for row in progression:
-						# Get the level.
-						level = row['Level']
-						levels.append(level)
-					# Add textified level signature ordinals.
-					middle = read_levels(*levels)
-
 			# Delete the line if level is out of range.
 			else:
 				# Get expressions.
@@ -117,7 +119,6 @@ def make_description(feature, class_name):
 				right = right[start:]
 				middle = '\n'
 
-
 		# Replace tag with a level signature plurality.
 		elif tag == 'levels':
 			# Create reducer.
@@ -127,8 +128,8 @@ def make_description(feature, class_name):
 			# Add textified level signature ordinals.
 			middle = read_levels(*levels)
 
-		elif tag in class_feature.get('variables', {}):
-			middle = class_feature['variables'][tag]
+		elif tag in feature_class.get('variables', {}):
+			middle = feature_class['variables'][tag]
 
 		# Tag is malformed.
 		else:
@@ -143,3 +144,10 @@ def make_description(feature, class_name):
 
 	# Return newly cleaned markdown.
 	return markdown
+
+
+
+# Helper function.
+def get_tag(markdown):
+	expression = r'`\{\( .+? \)\}`'
+	return re.search(expression, markdown)
