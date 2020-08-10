@@ -3,9 +3,13 @@ from helpers import ordinal
 
 
 def generate_summaries(class_features, class_progressions):
-	for class_name in class_features:
+	for class_name, features in class_features.items():
+		markdown = ''
+		markdown += f'# {class_name}\n'
 		progression = class_progressions[class_name]
-		generate_summary_table(progression)
+		markdown += generate_summary_table(progression)
+		markdown += summarize(features, class_name)
+		input(markdown)
 
 
 
@@ -26,7 +30,7 @@ def generate_summary_table(progression):
 					if subcolumn not in grouped_columns[column]:
 						grouped_columns[column].append(subcolumn)
 
-	markdown += '<table><thead><tr>'
+	markdown += '<table>\n\t<thead>\n\t\t<tr>'
 	for column in columns:
 		if column in grouped_columns:
 			column_span = len(grouped_columns[column])
@@ -34,27 +38,27 @@ def generate_summary_table(progression):
 		else:
 			column_span = 1
 			row_span = 2
-		markdown += '<th '
+		markdown += '\n\t\t\t<th '
 		markdown += f'colspan="{column_span}" '
 		markdown += f'rowspan="{row_span}">'
 		markdown += column
 		markdown += '</th>'
-	markdown += '</tr>'
+	markdown += '\n\t\t</tr>'
 
 	if len(grouped_columns) > 0:
-		markdown += '<tr>'
+		markdown += '\n\t\t<tr>'
 		for column in columns:
 			for subcolumn in grouped_columns.get(column, {}):
-				markdown += '<th '
+				markdown += '\n\t\t\t<th '
 				markdown += 'colspan="1" '
 				markdown += 'rowspan="1">'
 				markdown += subcolumn
-				markdown += '</th>'
-		markdown += '</tr>'
-	markdown += '<tbody>'
+				markdown += '\n\t\t\t</th>'
+		markdown += '\n\t\t</tr>'
+	markdown += '\n\t<tbody>'
 
 	for row in progression:
-		markdown += '<tr>'
+		markdown += '\n\t\t<tr>'
 		entries = []
 		for column, entry in row.items():
 			if isinstance(entry, dict):
@@ -62,9 +66,9 @@ def generate_summary_table(progression):
 				for item in entry.values():
 					flag = True
 					if item is None: item = '&mdash;'
-					markdown += f'<td>{str(item)}</td>'
+					markdown += f'\n\t\t\t<td>{str(item)}</td>'
 				if not flag:
-					markdown += f'<td>&mdash;</td>'
+					markdown += f'\n\t\t\t<td>&mdash;</td>'
 			else:
 				if isinstance(entry, list):
 					entry = ', '.join(entry)
@@ -73,11 +77,22 @@ def generate_summary_table(progression):
 					entry = ordinal(entry)
 
 				if entry is None: entry = '&mdash;'
-				markdown += f'<td>{entry}</td>'
+				markdown += f'\n\t\t\t<td>{entry}</td>'
 
-		markdown += '</tr>'
-	markdown += '</tbody>'
-	markdown += '</table>'
+		markdown += '\n\t\t</tr>'
+	markdown += '\n\t</tbody>'
+	markdown += '\n</table>\n'
 
-	input(markdown)
+	return markdown
+
+
+
+def summarize(features, class_name):
+	markdown = ''
+	features = [*features.values()]
+	features.sort(key = lambda feature: feature['classes'][class_name]['progression'][0].get('Feature', ''))
+	features.sort(key = lambda feature: feature['classes'][class_name]['progression'][0]['Level'])
+	for feature in features:
+		markdown += feature['classes'][class_name]['description']
+		markdown += '\n'
 	return markdown

@@ -17,8 +17,10 @@ def generate_descriptions(all_features):
 				# If the feature has children, loop through them.
 				for child_name in feature_class.get('children', {}):
 					child = all_features[child_name]
-					description += '\n#'
-					description += describe(child, class_name)
+					addon = describe(child, class_name)
+					if addon != '':
+						description += '\n#'
+						description += addon
 				# The description is complete for this feature_class!
 				feature_class['description'] = description
 
