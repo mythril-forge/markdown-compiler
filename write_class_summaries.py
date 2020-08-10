@@ -1,15 +1,24 @@
+import re
+import json
+from string import ascii_lowercase as alphabet
 from helpers import ordinal
 
 
 
-def generate_summaries(class_features, class_progressions):
-	for class_name, features in class_features.items():
+def generate_summaries(class_features, class_progressions, all_classes):
+	results = {}
+	for class_name in all_classes:
+		features = class_features[class_name]
+		class_data = all_classes[class_name]
 		markdown = ''
-		markdown += f'# {class_name}\n'
+
+		markdown += explain_class_data(class_data, class_name)
+
 		progression = class_progressions[class_name]
 		markdown += generate_summary_table(progression)
 		markdown += summarize(features, class_name)
-		input(markdown)
+
+		results[class_name] = markdown
 
 
 
@@ -95,4 +104,93 @@ def summarize(features, class_name):
 	for feature in features:
 		markdown += feature['classes'][class_name]['description']
 		markdown += '\n'
+	return markdown
+
+
+def explain_class_data(class_data, class_name):
+	hit_dice = class_data['Hit Dice']
+
+	def get_average_die(dice):
+		expression = r'\d+(?=d)'
+		dice_count = int(re.search(expression, dice).group())
+		expression = r'(?<=d)\d+'
+		dice_size = int(re.search(expression, dice).group())
+		dice_size = 1 + (dice_size // 2)
+		total = dice_count * dice_size
+		return str(total)
+
+	avg_dice = get_average_die(hit_dice)
+
+	markdown = ''
+	# Start with hit dice.
+	markdown += f'# {class_name}'
+	markdown += '\n## Hit Points'
+	markdown += '\n- **Hit Dice:** '
+	markdown += f'{hit_dice}'
+	markdown += '\n- **Hit Points per Level:** '
+	markdown += f'{hit_dice} (reroll 1\'s, or take {avg_dice}) + constitution modifier'
+
+
+	def parse_proficiency(prof_type):
+		add_text = ''
+		if len(prof_type) == 0:
+			return add_text
+		for prof in prof_type:
+			if prof['choose'] is None:
+				add_text += ''
+			else:
+				add_text += f'Choose {prof["choose"]} from '
+			add_text += ', '.join(prof['selection'])
+			add_text += '.'
+		return add_text
+
+	# Next, parse proficiencies.
+	profs = class_data['Starting Out']['Proficiencies']
+	markdown += '\n\n## Proficiencies'
+	all_profs = ['Armor', 'Weapons', 'Saving Throws', 'Skills', 'Tools', 'Languages']
+
+	for these_profs in all_profs:
+		if len(profs[these_profs]) > 0:
+			markdown += '\n'
+			markdown += f'- **{these_profs}:** '
+			markdown += parse_proficiency(profs[these_profs])
+
+	# Starting Equipment
+	markdown += '\n\n## Starting Equipment'
+	markdown += '\nYou start with the following items, plus anything provided by your background.'
+	starter_equipment = class_data['Starting Out']['Starting Equipment']
+	for item_groups in starter_equipment:
+		if item_groups['choose'] == None:
+			markdown += f"\n- {', '.join(item_groups['selection'])}"
+		else:
+			markdown += '\n-'
+			loops = 0
+			for item in item_groups['selection']:
+				x = alphabet[loops]
+				if isinstance(item, list):
+					markdown += f' ({x}) '
+					markdown += ', '.join(item)
+				else:
+					markdown += f' ({x}) '
+					markdown += item
+				loops += 1
+
+	initial_funds = f'\n- {class_data["Starting Out"]["Initial Funds"]} silver pieces'
+	markdown += initial_funds
+
+	# Multiclassing stufff
+	markdown += '\n\n## Multiclassing'
+	markdown += "\nWhen you gain a level in a class other than your first, you gain only some of that class's starting proficiencies."
+	markdown += '\n- **Prerequisites:**'
+	for item, value in class_data['Multiclassing']['Prerequisites'].items():
+		markdown += '\n\t' + f'- **{item}:** {value}'
+
+	profs = class_data['Multiclassing']['Proficiencies']
+	all_profs = ['Armor', 'Weapons', 'Saving Throws', 'Skills', 'Tools', 'Languages']
+	for these_profs in all_profs:
+		if len(profs[these_profs]) > 0:
+			markdown += '\n'
+			markdown += f'- **{these_profs}:** '
+			markdown += parse_proficiency(profs[these_profs])
+	# for item, value
 	return markdown
