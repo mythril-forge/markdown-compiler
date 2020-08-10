@@ -109,6 +109,25 @@ def compose_class_progressions(class_features):
 							if entry['Level'] >= row['Level']:
 								entry[column] = value
 
+			# What's more -- the columns could be in a group!
+			group_entries = {}
+			for row in progression:
+				for column, group in row.items():
+					if isinstance(group, dict):
+						if column not in group_entries:
+							group_entries[column] = []
+						for item in group:
+							if item not in group_entries[column]:
+								group_entries[column].append(item)
+			# Now we have all the group keys.
+			for row in progression:
+				for column, group in row.items():
+					if isinstance(group, dict):
+						for subcolumn in group_entries[column]:
+							if subcolumn not in group:
+								group[subcolumn] = None
+			# Phew... All the keys will have been filled.
+
 		# Revert and sort class progresions
 		class_progression.sort(key = lambda row: row['Level'])
 		class_progressions[class_name] = class_progression
