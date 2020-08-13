@@ -14,7 +14,7 @@ def generate_summaries(class_features, class_progressions, all_classes):
 
 		# Progression table.
 		prog_table = generate_summary_table(progression)
-		prog_table = f'###### {class_name.capitalize()}\n' + prog_table
+		prog_table = f'###### {class_name.capitalize()} Table\n' + prog_table
 		# Explaination startout markdown.
 		explained_intro = explain_class_data(class_data, class_name)
 		# Markdown feature summary.
@@ -28,15 +28,14 @@ def generate_summaries(class_features, class_progressions, all_classes):
 		left_end, right_start = rgx.span()
 		left = markdown[:left_end]
 		right = markdown[right_start:]
-		middle = ''
+		middle = f'As a {class_name}, you gain the following class features.\n'
 		middle += explained_intro
-		middle += prog_table
+		middle += prog_table + '\n'
 		middle += feature_summary
-		middle = middle.replace('# ', '## ')
 
 		markdown = left + middle + right
-		markdown = markdown.replace('####### ', '###### ')
-		input(markdown)
+		markdown = re.sub(r'#{6,}', '######', markdown)
+		markdown = re.sub(r'\n{2,}', '\n\n', markdown)
 		results[class_name] = markdown
 	return results
 
@@ -148,13 +147,47 @@ def explain_class_data(class_data, class_name):
 	# the vitalities listing does not get the same structure.
 	listing = ''
 	listing += (
-		'\n- **Hit Dice:**'
+		'\n- **Hit Dice**'
 		f'\n\t- {hit_dice} per {class_name} level'
-		'\n- **Hit Points:**'
+		'\n- **Hit Points**'
 		f'\n\t- {hit_dice} (reroll 1\'s, or take {avg_dice}) '
 		f'+ your constitution modifier per {class_name} level'
 	)
 	listings['Vitality'] = listing
+
+
+	def conjoin(
+		words,
+		conjunction='and',
+		seperator_list=[]
+	):
+		# base case
+		if len(words) < 1:
+			return ''
+		elif len(words) < 2:
+			return words[0]
+
+		# this generator loops through the seperator_list
+		def seperator():
+			for item in seperator_list:
+				yield item
+			while True:
+				yield ''
+		seperator = seperator()
+
+		# this links up words with the seperator
+		new_words = []
+		for word in words:
+			new_words.append(f'{next(seperator)}{word}')
+		words = new_words
+
+		# here's the main part of the function.
+		final_word = words[-1]
+		words = words[:-1]
+		words = ', '.join(words)
+		words += f' {conjunction} {final_word}'
+		return words
+
 
 	# create the listing objects.
 	for section, section_data in class_data['structured-data'].items():
@@ -166,9 +199,18 @@ def explain_class_data(class_data, class_name):
 				items = []
 				for item in grouping['selection']:
 					if isinstance(item, list):
-						item = ', '.join(item)
+						item = conjoin(item)
 					items.append(item)
-				items = ', '.join(items)
+
+				# We have our items now.
+				if grouping['choose'] is None:
+					items = conjoin(items)
+				elif section == 'Equipment':
+					seperator_list = [*map(lambda l: f'({l}) ', alphabet)]
+					items = conjoin(items, 'or', seperator_list)
+				else:
+					num_choices = grouping['choose']
+					items = f'choose {num_choices} from {conjoin(items, "and")}'
 				listing += f'\n\t- {items}'
 		listings[section] = listing
 	markdown = f'''
