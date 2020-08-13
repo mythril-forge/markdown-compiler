@@ -208,6 +208,8 @@ def explain_class_data(class_data, class_name):
 				elif section == 'Equipment':
 					seperator_list = [*map(lambda l: f'({l}) ', alphabet)]
 					items = conjoin(items, 'or', seperator_list)
+				elif section == 'Prerequisites':
+					items = conjoin(items, 'or')
 				else:
 					num_choices = grouping['choose']
 					items = f'choose {num_choices} from {conjoin(items, "and")}'
