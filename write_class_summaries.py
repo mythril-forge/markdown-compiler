@@ -116,10 +116,26 @@ def generate_summary_table(progression):
 
 
 def summarize(features, class_name):
-	markdown = ''
+	# Make an array of features.
 	features = [*features.values()]
+	# Sort them nicely.
 	features.sort(key = lambda feature: feature['classes'][class_name]['progression'][0].get('Feature', ''))
 	features.sort(key = lambda feature: feature['classes'][class_name]['progression'][0]['Level'])
+
+	# If the feature is not in the table,
+	# then it doesn't get described independently.
+	# It needs "parental guidance".
+	def filterer(feature):
+		good_to_go_flag = False
+		for row in feature['classes'][class_name]['progression']:
+			if 'Feature' in row:
+				good_to_go_flag = True
+				break
+		return good_to_go_flag
+	features = filter(filterer, features)
+
+	# Add every feature to the markdown.
+	markdown = ''
 	for feature in features:
 		markdown += feature['classes'][class_name]['description']
 		markdown += '\n'
