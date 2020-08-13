@@ -4,6 +4,7 @@ from arrange_data import compose_class_progressions
 from write_feature_descriptions import generate_descriptions
 from write_class_summaries import generate_summaries
 
+import os
 
 def main():
 	# Obtain all features, ever.
@@ -21,5 +22,15 @@ def main():
 	# Create a summary for all the classes.
 	class_summaries = generate_summaries(class_features, class_progressions, all_classes)
 
+	return class_summaries
+
 if __name__ == '__main__':
-	main()
+	class_summaries = main()
+	try:
+		os.makedirs('./class_summaries/')
+	except:
+		pass
+	for class_name, summary in class_summaries.items():
+		filepath = f'./class_summaries/{class_name}.md'
+		with open(filepath, 'w') as file:
+			file.write(summary)
