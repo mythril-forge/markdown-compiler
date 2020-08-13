@@ -10,15 +10,35 @@ def generate_summaries(class_features, class_progressions, all_classes):
 	for class_name in all_classes:
 		features = class_features[class_name]
 		class_data = all_classes[class_name]
-		markdown = ''
-
-		markdown += explain_class_data(class_data, class_name)
-
 		progression = class_progressions[class_name]
-		markdown += generate_summary_table(progression)
-		markdown += summarize(features, class_name)
 
+		# Progression table.
+		prog_table = generate_summary_table(progression)
+		prog_table = f'###### {class_name.capitalize()}\n' + prog_table
+		# Explaination startout markdown.
+		explained_intro = explain_class_data(class_data, class_name)
+		# Markdown feature summary.
+		feature_summary = summarize(features, class_name)
+
+		# Markdown base.
+		markdown = all_classes[class_name]['desc_template']
+
+		expression = r'`\{\( class-features \)\}`'
+		rgx = re.search(expression, markdown)
+		left_end, right_start = rgx.span()
+		left = markdown[:left_end]
+		right = markdown[right_start:]
+		middle = ''
+		middle += explained_intro
+		middle += prog_table
+		middle += feature_summary
+		middle = middle.replace('# ', '## ')
+
+		markdown = left + middle + right
+		markdown = markdown.replace('####### ', '###### ')
+		input(markdown)
 		results[class_name] = markdown
+	return results
 
 
 
@@ -107,9 +127,14 @@ def summarize(features, class_name):
 	return markdown
 
 
-def explain_class_data(class_data, class_name):
-	hit_dice = class_data['Hit Dice']
 
+def explain_class_data(class_data, class_name):
+	# this groups object holds various bullet-lists.
+	# it will be combined later into the markdown.
+	listings = {}
+
+	# the hit dice stat is great, but we need an average too.
+	hit_dice = class_data['hit-dice']
 	def get_average_die(dice):
 		expression = r'\d+(?=d)'
 		dice_count = int(re.search(expression, dice).group())
@@ -118,79 +143,63 @@ def explain_class_data(class_data, class_name):
 		dice_size = 1 + (dice_size // 2)
 		total = dice_count * dice_size
 		return str(total)
-
 	avg_dice = get_average_die(hit_dice)
 
-	markdown = ''
-	# Start with hit dice.
-	markdown += f'# {class_name}'
-	markdown += '\n## Hit Points'
-	markdown += '\n- **Hit Dice:** '
-	markdown += f'{hit_dice}'
-	markdown += '\n- **Hit Points per Level:** '
-	markdown += f'{hit_dice} (reroll 1\'s, or take {avg_dice}) + constitution modifier'
+	# the vitalities listing does not get the same structure.
+	listing = ''
+	listing += (
+		'\n- **Hit Dice:**'
+		f'\n\t- {hit_dice} per {class_name} level'
+		'\n- **Hit Points:**'
+		f'\n\t- {hit_dice} (reroll 1\'s, or take {avg_dice}) '
+		f'+ your constitution modifier per {class_name} level'
+	)
+	listings['Vitality'] = listing
 
+	# create the listing objects.
+	for section, section_data in class_data['structured-data'].items():
+		# Create the listing string
+		listing = ''
+		for group_type, groupings in section_data.items():
+			listing += f'\n- **{group_type}**'
+			for grouping in groupings:
+				items = []
+				for item in grouping['selection']:
+					if isinstance(item, list):
+						item = ', '.join(item)
+					items.append(item)
+				items = ', '.join(items)
+				listing += f'\n\t- {items}'
+		listings[section] = listing
+	markdown = f'''
+## Prerequisites
+Before you can become a {class_name}, you must fulfill some basic prerequisites.
+You are not eligible to become a {class_name} if you do not fit the minimum requirements listed below.
+{listings["Prerequisites"]}
 
-	def parse_proficiency(prof_type):
-		add_text = ''
-		if len(prof_type) == 0:
-			return add_text
-		for prof in prof_type:
-			if prof['choose'] is None:
-				add_text += ''
-			else:
-				add_text += f'Choose {prof["choose"]} from '
-			add_text += ', '.join(prof['selection'])
-			add_text += '.'
-		return add_text
+## Vitality
+You have a pool of hit points and hit dice, which represent your vitality.
+You start with a number of hit points determined by your race.
+As your level increases, so do these pools of vitality, as noted below.
+{listings["Vitality"]}
 
-	# Next, parse proficiencies.
-	profs = class_data['Starting Out']['Proficiencies']
-	markdown += '\n\n## Proficiencies'
-	all_profs = ['Armor', 'Weapons', 'Saving Throws', 'Skills', 'Tools', 'Languages']
+## Proficiencies
+You have a set of capabilities that are part and parcel to your vocation.
+The following proficiencies accompany any extended by your race or background.
+{listings["Proficiencies"]}
 
-	for these_profs in all_profs:
-		if len(profs[these_profs]) > 0:
-			markdown += '\n'
-			markdown += f'- **{these_profs}:** '
-			markdown += parse_proficiency(profs[these_profs])
+## Starting Equipment
+You start with the following items, plus anything provided by your background.
+{listings["Equipment"]}
 
-	# Starting Equipment
-	markdown += '\n\n## Starting Equipment'
-	markdown += '\nYou start with the following items, plus anything provided by your background.'
-	starter_equipment = class_data['Starting Out']['Starting Equipment']
-	for item_groups in starter_equipment:
-		if item_groups['choose'] == None:
-			markdown += f"\n- {', '.join(item_groups['selection'])}"
-		else:
-			markdown += '\n-'
-			loops = 0
-			for item in item_groups['selection']:
-				x = alphabet[loops]
-				if isinstance(item, list):
-					markdown += f' ({x}) '
-					markdown += ', '.join(item)
-				else:
-					markdown += f' ({x}) '
-					markdown += item
-				loops += 1
+## Multiclassing
+Your DM might allow you to use the multiclassing rules outlined in Chapter 6.
+These rules allow you to take levels in other classes when you level up.
+To be eligible to take a level in another class, you must fulfill its prerequisites, as well as the prerequisites for each class in which you have a level.
 
-	initial_funds = f'\n- {class_data["Starting Out"]["Initial Funds"]} silver pieces'
-	markdown += initial_funds
+When you first gain a level in a new class via multiclassing, you gain only some of that classes' starting proficiencies.
+These proficiencies are listed out here for {class_name}.
+{listings["Multiclassing"]}
 
-	# Multiclassing stufff
-	markdown += '\n\n## Multiclassing'
-	markdown += "\nWhen you gain a level in a class other than your first, you gain only some of that class's starting proficiencies."
-	markdown += '\n- **Prerequisites:**'
-	for item, value in class_data['Multiclassing']['Prerequisites'].items():
-		markdown += '\n\t' + f'- **{item}:** {value}'
-
-	profs = class_data['Multiclassing']['Proficiencies']
-	all_profs = ['Armor', 'Weapons', 'Saving Throws', 'Skills', 'Tools', 'Languages']
-	for these_profs in all_profs:
-		if len(profs[these_profs]) > 0:
-			markdown += '\n'
-			markdown += f'- **{these_profs}:** '
-			markdown += parse_proficiency(profs[these_profs])
-	# for item, value
+'''
 	return markdown

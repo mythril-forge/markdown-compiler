@@ -124,7 +124,6 @@ def collect_data(
 			with open(filepath) as file:
 				class_data = json.load(file)
 
-			'''
 			# Get markdown description template.
 			filepath = classes_dir + class_name + '.md'
 			with open(filepath) as file:
@@ -132,7 +131,6 @@ def collect_data(
 
 			# Combine for full class data summary.
 			class_data['desc_template'] = template
-			'''
 
 			# Add to classes dictionary.
 			classes[class_name] = class_data
