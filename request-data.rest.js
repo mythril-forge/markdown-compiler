@@ -98,7 +98,7 @@ const getBlobsFromTree = async (
 }
 
 // Given a blob, obtain the text content.
-const getContentFromBlob = async (
+const getContentFromBlob = (
 	blob,
 ) => {
 	// Obtain the content.
@@ -132,7 +132,7 @@ const getFileData = async () => {
 	const entries = Object.entries(blobObjDict)
 	for (const [entryName, blobObj] of entries) {
 		// Decode the blobs to just give back some text.
-		const entryText = await getContentFromBlob(blobObj)
+		const entryText = getContentFromBlob(blobObj)
 		files[entryName] = entryText
 	}
 	console.info('done downloading!')
@@ -142,7 +142,6 @@ const getFileData = async () => {
 }
 
 /* MAKE MODULE EXPORTS */
-console.log(getFileData())
-// This will resolve the promise and print it to console.
-// You can expand the objects and subobjects to see data.
-// export default getFileData()
+// This will be exported as a promise.
+// The next module will have to await the data as normal.
+export default getFileData()

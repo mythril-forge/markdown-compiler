@@ -1,6 +1,12 @@
-import {fileData as files} from './request-data.js'
+/* OBTAIN CODE IMPORTS */
+// You can change this string to './request-data.rest.js' to use the REST API.
+// Purely from a speed standpoint, the GraphQL API is much better for our purposes.
+import requestedFiles from './request-data.graphql.js'
 
 
+/* SET UP DATA PARSERS & SORTERS */
+// Using the text from the API, this module can properly parse JSON.
+// The JSON entered into normal JavaScript objects, and the markdown entry is added.
 const collectFeatures = (files) => {
 	files = Object.entries(files)
 
@@ -29,7 +35,7 @@ const collectFeatures = (files) => {
 		else {
 			console.error(`
 				Oh gosh, something went wrong.
-				FileName: ${fileName}
+				file: ${fileName}.${fileType}
 				^^^ This was the cause of the error.
 			`)
 		}
@@ -42,7 +48,8 @@ const collectFeatures = (files) => {
 	return features
 }
 
-
+// Without generating new objects, this function can filter each class feature.
+// For example, it knows that "channel divinity" works for both "cleric" and "paladin".
 const collectClassFeatures = (features) => {
 	features = Object.entries(features)
 
@@ -71,9 +78,10 @@ const collectClassFeatures = (features) => {
 	return classFeatures
 }
 
-
-const collectData = async (files) => {
-	files = await files
+/* ACTIVATE DATA PARSER */
+// After awaiting the reequested files, this function makes the data more useable.
+const parseData = async () => {
+	const files = await requestedFiles
 	const features = collectFeatures(files)
 	const classFeatures = collectClassFeatures(features)
 	return {
@@ -82,5 +90,7 @@ const collectData = async (files) => {
 	}
 }
 
-
-export const featureDataset = collectData(files)
+/* MAKE MODULE EXPORTS */
+// This will be exported as a promise.
+// The next module will have to await the data as normal.
+export default parseData()
