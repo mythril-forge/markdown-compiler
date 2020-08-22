@@ -40,7 +40,7 @@ query GetFiles {
 
 /* CREATE THE DATA COLLECTOR */
 // Create an async function to make the request.
-const getFileData = async () => {
+const requestFeatureFiles = async () => {
 	// The request is made when graphql is called.
 	const result = await graphql(query, graphqlInit)
 	const entries = await result.organization.repository.object.entries
@@ -66,4 +66,4 @@ const getFileData = async () => {
 /* MAKE MODULE EXPORTS */
 // This will resolve the promise and print it to console.
 // You can expand the objects and subobjects to see data.
-export default getFileData()
+export {requestFeatureFiles}

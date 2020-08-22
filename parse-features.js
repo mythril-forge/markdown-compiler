@@ -29,7 +29,10 @@ const getClassFeatures = (features) => {
 	return classFeatures
 }
 
-const getClassProgression = (classFeatures) => {
+const getClassProgression = (
+	classFeatures,
+	classes = undefined,
+) => {
 	const getOne = (className) => {
 		// Initialize empty array to hold class progression rows.
 		// Each row will have a distinct level.
@@ -37,7 +40,13 @@ const getClassProgression = (classFeatures) => {
 		// An object or dictionary could have been used, but this will be ported to JSON.
 		// JSON doesn't support integer keys. I don't like that.
 		const progression = []
-		for (let level in [...Array(20).keys()]) {
+		let maxLevel = 20
+		if (classes !== undefined) {
+			if (classFeatures.includes(className)) {
+				maxLevel = classes[className]['max-level']
+			}
+		}
+		for (let level in [...Array(maxLevel).keys()]) {
 			level = parseInt(level) + 1
 			progression.push({
 				Level: level,

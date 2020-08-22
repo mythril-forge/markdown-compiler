@@ -14,7 +14,7 @@ import {
 
 /* SET UP API INTERACTIONS */
 // Given a branch object, obtain its HEAD commit's root file-tree.
-const getTreeFromBranch = async (
+const requestTreeFromBranch = async (
 	branch,
 ) => {
 	// Obtain the treeURL from the branch.
@@ -28,7 +28,7 @@ const getTreeFromBranch = async (
 }
 
 // Given a tree, path, and optional nodeType, get the next node.
-const getNodeFromTree = async (
+const requestNodeFromTree = async (
 	tree,
 	nodePath = '',
 	nodeType = undefined,
@@ -73,7 +73,7 @@ const getNodeFromTree = async (
 }
 
 // Given a tree, obtain a dictionary of blobs.
-const getBlobsFromTree = async (
+const requestBlobsFromTree = async (
 	tree,
 ) => {
 
@@ -113,7 +113,7 @@ const getContentFromBlob = (
 
 /* CREATE THE DATA COLLECTOR */
 // Create an async function to make the requests.
-const getFileData = async () => {
+const requestFeatureFiles = async () => {
 	// The initial git branch can be determined by the imported variables.
 	const branchURL = `https://${endpoint}/repos/${account}/${project}/branches/${branch}`
 	console.warn(branchURL)
@@ -121,10 +121,10 @@ const getFileData = async () => {
 	const branchObj = await response.json()
 
 	// The module can make deeper calls once the branchObj is determined..
-	const rootTreeObj = await getTreeFromBranch(branchObj)
+	const rootTreeObj = await requestTreeFromBranch(branchObj)
 	const blobTreePath = `source/${version}/abilities/features/`
-	const blobTreeObj = await getNodeFromTree(rootTreeObj, blobTreePath)
-	const blobObjDict = await getBlobsFromTree(blobTreeObj)
+	const blobTreeObj = await requestNodeFromTree(rootTreeObj, blobTreePath)
+	const blobObjDict = await requestBlobsFromTree(blobTreeObj)
 
 	// The resulting object has a bit too much info, so I'm flattening it a bit.
 	// Loop through all the blobs to consolidate the data.
@@ -144,4 +144,4 @@ const getFileData = async () => {
 /* MAKE MODULE EXPORTS */
 // This will be exported as a promise.
 // The next module will have to await the data as normal.
-export default getFileData()
+export default {requestFeatureFiles}
