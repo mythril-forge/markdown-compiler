@@ -1,3 +1,4 @@
+/*** main.py3 ****************************************************************************
 from obtain_data import collect_data
 from arrange_data import arrange_class_features
 from arrange_data import compose_class_progressions
@@ -34,3 +35,4 @@ if __name__ == '__main__':
 		filepath = f'./class_summaries/{class_name}.md'
 		with open(filepath, 'w') as file:
 			file.write(summary)
+*****************************************************************************************/

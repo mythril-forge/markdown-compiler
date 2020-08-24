@@ -1,3 +1,4 @@
+/*** arrange_data.py3 ********************************************************************
 def arrange_class_features(features):
 	'''
 	This will take in the features dataset.
@@ -134,3 +135,4 @@ def compose_class_progressions(class_features):
 
 	# All class progressions have been completely filled.
 	return class_progressions
+*****************************************************************************************/

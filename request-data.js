@@ -1,3 +1,4 @@
+/*** obtain_data.py3 *********************************************************************
 from functools import reduce
 from zipfile import ZipFile
 from io import BytesIO
@@ -141,3 +142,4 @@ def collect_data(
 	classes = collect_classes()
 	features = collect_features()
 	return classes, features
+*****************************************************************************************/
