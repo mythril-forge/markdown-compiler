@@ -1,159 +1,178 @@
-/*** write_features_descriptions.py3 *****************************************************
-from helpers import read_levels
-from helpers import ordinal
-from functools import reduce
-import re
-infinity = float('inf')
+import {readLevels, ordinal} from './helpers.js'
+import {RegExX} from './reg-exx.js'
 
 
 
-def generate_descriptions(all_features):
-	# Loop through all the features!
-	for feature in all_features.values():
-		if 'classes' in feature:
-			# Loop through each class in the feature.
-			for class_name in feature.get('classes', {}):
-				feature_class = feature['classes'][class_name]
-				description = describe(feature, class_name)
-				# If the feature has children, loop through them.
-				for child_name in feature_class.get('children', {}):
-					child = all_features[child_name]
-					addon = describe(child, class_name)
-					addon = addon.replace('# ', '## ')
-					if addon != '':
-						description += '\n'
-						description += addon
-				description = description.replace('# ', '## ')
-				# The description is complete for this feature_class!
-				feature_class['description'] = description
+const generateDescriptions = (allFeatures) => {
+	// Loop through all the features!
+	for (const feature of Object.values(allFeatures)) {
+
+		// Loop through each class in the feature.
+		for (const className of features['classes']||{}) {
+			const featureClassInfo = feature['classes'][class_name]
+			let description = describe(feature, className)
+			// If the feature has children, loop through them.
+			for (const childName of featureClassInfo['children']||{}) {
+				const child = allFeatures[childName]
+				let addon = describe(child, class_name)
+				addon = addon.replace('# ', '## ')
+				if (addon != '') {
+					description += '\n'
+					description += addon
+				}
+			}
+			description = description.replace('# ', '## ')
+			// The description is complete for this featureClassInfo!
+			featureClassInfo['description'] = description
+		}
+	}
+}
 
 
 
-def describe(feature, class_name):
-	markdown = feature['desc_template']
-	# Track each visited text-tag.
-	visited_tags = []
+const describe(feature, className) {
+	let markdown = feature['template']
+	// Track each visited text-tag.
+	const visitedTags = []
 
-	if 'classes' in feature:
-		# Get the class data from this feature.
-		feature_class = feature \
-			['classes']           \
-			[class_name]
+	if ('classes' in feature) {
+		// Get the class data from this feature.
+		const featureClassInfo = feature['classes'][className]
 
-		# Certain subfeatures will not have a progression.
-		# Dont try to set progression in this case.
-		if 'progression' in feature_class:
-			# Get the progression table for this class.
-			progression = feature \
-				['classes']         \
-				[class_name]        \
-				['progression']
-			# The progression table may not be sorted. Sort it!
-			progression.sort(key = lambda x: x['Level'])
+		// Certain subfeatures will not have a progression.
+		// Dont try to set progression in this case.
+		if ('progression' in featureClassInfo) {
+			// Get the progression table for this class.
+			const progression = feature['classes'][className]['progression']
+			// The progression table may not be sorted. Sort it!
+			progression.sort((a, b) => {
+				if (a === b) {
+					return 0
+				} else if (a.Level > b.Level) {
+					return 1
+				} else if (a.Level < b.Level) {
+					return -1
+				} else {
+					return 0
+				}
+			})
 
-	# This is where the meat of the function happens.
-	# Try to find a tag.
-	regex_tag = get_tag(markdown)
-	# Transform tags into readable text while they exist.
-	while regex_tag is not None:
-		# Get indices from search result.
-		start, end = regex_tag.span()
-		tag = regex_tag.group()[4:-4]
-		left = markdown[:start]
-		right = markdown[end:]
-		middle = ''
+	// This is where the meat of the function happens.
+	// Try to find a tag.
+	let tagSearch = getTag(markdown)
+	// Transform tags into readable text while they exist.
+	while (tagSearch.continues) {
+		// Get indices from search result.
+		const [start, end] = tagSearch.span
+		const tag = tagSearch.match.slice(4, -4)
+		let left = markdown.slice(0, start)
+		let right = markdown.slice(end)
+		let middle = ''
 
-		# Replace tag with designated class name.
-		if tag == 'class':
-			middle = class_name
+		// Replace tag with designated class name.
+		if (tag === 'class') {
+			middle = className
+		}
 
-		# Replace tag with a level signature.
-		elif tag in ['level', 'end-levels', 'all-levels']:
-			# Create and use reducer to get number of matches.
-			reducer = lambda count, tag: count + (tag == 'level')
-			matches = reduce(reducer, visited_tags, 0)
-			# The end-levels tag means all tags are visited.
-			if ('end-levels' in visited_tags): matches += infinity
+		// Replace tag with a level signature.
+		else if (['level', 'end-levels', 'all-levels'].includes(tag)) {
+			// Create and use reducer to get number of matches.
+			const reducer = (count, tag) => count + (tag === 'level')
+			const matches = visitedTags.reduce(reducer, 0)
+			// The end-levels tag means all tags are visited.
+			if (visitedTags.includes('end-levels')) {matches += Infinity}
 
-			# If tag is all-levels, add all levels ever.
-			if tag == 'all-levels':
-				# Initialize levels for this action.
-				levels = []
-				# Get all the rows in this feature.
-				for row in progression:
-					# Get the level.
-					level = row['Level']
+			// If tag is all-levels, add all levels ever.
+			if (tag === 'all-levels') {
+				// Initialize levels for this action.
+				const levels = []
+				// Get all the rows in this feature.
+				for (row of progression) {
+					// Get the level.
+					level = row.Level
 					levels.append(level)
-				# Add textified level signature ordinals.
-				middle = read_levels(*levels)
+				}
+				// Add textified level signature ordinals.
+				middle = readLevels(...levels)
+			}
 
-			# Ensure index is in range of the progression table.
-			elif matches < len(progression):
+			// Ensure index is in range of the progression table.
+			else if (matches < progression.length) {
 
-				# Add a single level.
-				if tag == 'level':
-					# Get the associated row.
-					row = progression[matches]
-					# Get the level.
-					level = row['Level']
-					# Add textified level signature ordinals.
-					middle = read_levels(level)
+				// Add a single level.
+				if (tag === 'level') {
+					// Get the associated row.
+					const row = progression[matches]
+					// Get the level.
+					const level = row.Level
+					// Add textified level signature ordinals.
+					middle = readLevels(level)
 
-				# Add multiple levels.
-				elif tag == 'end-levels':
-					# Initialize levels for this action.
-					levels = []
-					# Get all the remaining unvisted rows.
-					for row in progression[matches:]:
-						# Get the level.
-						level = row['Level']
+				// Add multiple levels.
+				else if (tag === 'end-levels') {
+					// Initialize levels for this action.
+					const levels = []
+					// Get all the remaining unvisted rows.
+					for (const row of progression.slice(matches)) {
+						// Get the level.
+						const level = row.Level
 						levels.append(level)
-					# Add textified level signature ordinals.
-					middle = read_levels(*levels)
+					}
+					// Add textified level signature ordinals.
+					middle = readLevels(...levels)
+				}
+			}
 
-			# Delete the line if level is out of range.
-			else:
-				# Get expressions.
-				left_expression =  r'(^|\n).*?$'
-				right_expression = r'^.*?(\n|$)'
-				# Get spans.
-				end, _ = re.search(left_expression, left).span()
-				_, start = re.search(right_expression, right).span()
-				# Delete line.
-				left = left[:end]
-				right = right[start:]
+			// Delete the line if level is out of range.
+			else {
+				// Get expressions.
+				const leftExpression = /(^|\n).*?$/
+				const rightExpression = /^.*?(\n|$)/
+				// Get spans.
+				const [end, ] = new RegExX(leftExpression, left).exec().span()
+				const [, start] = new RegExX(rightExpression, right).exec().span()
+				// Delete line.
+				left = left.slice(0, end)
+				right = right.slice(start)
 				middle = '\n'
+			}
+		}
 
-		# Replace tag with a level signature plurality.
-		elif tag == 'levels':
-			# Create reducer.
-			reducer = lambda list, row: [*list, row['Level']]
-			# Use reducer to obtain all levels.
-			levels = reduce(reducer, progression, [])
-			# Add textified level signature ordinals.
-			middle = read_levels(*levels)
+		// Replace tag with a level signature plurality.
+		else if (tag === 'levels') {
+			// Create reducer.
+			const reducer = (list, row) => [...list, row.Level]
+			// Use reducer to obtain all levels.
+			const levels = progression.reduce(reducer, [])
+			// Add textified level signature ordinals.
+			middle = readLevels(...levels)
+		}
 
-		elif tag in feature_class.get('variables', {}):
-			middle = feature_class['variables'][tag]
+		else if (tag in featureClassInfo['variables']||{}) {
+			middle = featureClassInfo['variables'][tag]
+		}
 
-		# Tag is malformed.
-		else:
-			raise ValueError(tag)
+		// Tag is malformed.
+		else {
+			throw new Error(tag)
+		}
 
-		# Include this processed tag.
-		visited_tags.append(tag)
-		# Update markdown.
+		// Include this processed tag.
+		visitedTags.push(tag)
+		// Update markdown.
 		markdown = left + middle + right
-		# Check next tag.
-		regex_tag = get_tag(markdown)
+		// Check next tag.
+		tagSearch = getTag(markdown)
+	}
 
-	# Return newly cleaned markdown.
+	// Return newly cleaned markdown.
 	return markdown
+}
 
 
 
-# Helper function.
-def get_tag(markdown):
-	expression = r'`\{\( .+? \)\}`'
-	return re.search(expression, markdown)
-*****************************************************************************************/
+// Helper function.
+const getTag(markdown) {
+	const expression = /`\{\( .+? \)\}`/
+	return new RegExX(expression, markdown)
+}
