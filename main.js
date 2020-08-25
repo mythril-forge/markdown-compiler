@@ -1,14 +1,14 @@
-import {requestFeatureData} from './request-files.graphql.js'
-import {parseFeatures} from './parse-data.js'
+import {requestFeatureData} from './request-data.graphql.js'
+// import {parseFeatures} from './parse-data.js'
 
 
 (async () => {
 	// Obtain all features, ever.
-	let featureData = requestFeatureData()
-	// let classData = requestClassData()
-	featureData = await featureData
-	// classData = await classData
-	const features = parseFeatures(featureData)
+	const featurePromise = requestFeatureData()
+	// const classPromise = requestClassData()
+	const featureData = await featurePromise
+	// const classData = await classPromise
+	// const features = parseFeatures(featureData)
 	// const classes = parseClasses(classData)
 
 	// Ensure every feature has a description for every class.
@@ -19,9 +19,10 @@ import {parseFeatures} from './parse-data.js'
 
 	// Create a summary for all the classes.
 
-
 	// Classes and features are respectively returned
 	// once they are digested by this file
-	console.dir(classes)
-	console.dir(features)
+
+	console.dir(featureData)
+	// console.dir(classes)
+	// console.dir(features)
 })()
