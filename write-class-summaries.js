@@ -1,257 +1,331 @@
-/*** write_class_summaries.py3 ***********************************************************
-import re
-import json
-from string import ascii_lowercase as alphabet
-from helpers import ordinal
+import {RegExX} from './reg-exx.js'
+import {alphabet} from './helpers'
 
 
 
-def generate_summaries(class_features, class_progressions, all_classes):
-	results = {}
-	for class_name in all_classes:
-		features = class_features[class_name]
-		class_data = all_classes[class_name]
-		progression = class_progressions[class_name]
+const generateSummaries = (
+	classFeatures,
+	classProgressions,
+	allClasses
+) => {
+	const results = {}
+	for (const className of allClasses) {
+		const features = classFeatures[className]
+		const classData = allClasses[className]
+		const progression = classProgressions[className]
 
-		# Progression table.
-		prog_table = generate_summary_table(progression)
-		prog_table = f'###### {class_name.capitalize()} Table\n' + prog_table
-		# Explaination startout markdown.
-		explained_intro = explain_class_data(class_data, class_name)
-		# Markdown feature summary.
-		feature_summary = summarize(features, class_name)
+		// Progression table.
+		let progTable = generateSummaryTable(progression)
+		progTable = `###### ${className.capitalize()} Table\n` + progTable
+		// Explaination startout markdown.
+		const explainedIntro = explainClassData(classData, className)
+		// Markdown feature summary.
+		const featureSummary = summarize(features, className)
 
-		# Markdown base.
-		markdown = all_classes[class_name]['desc_template']
+		// Markdown base.
+		let markdown = allClasses[className]['descTemplate']
 
-		expression = r'`\{\( class-features \)\}`'
-		rgx = re.search(expression, markdown)
-		left_end, right_start = rgx.span()
-		left = markdown[:left_end]
-		right = markdown[right_start:]
-		middle = f'As a {class_name}, you gain the following class features.\n'
-		middle += explained_intro
-		middle += prog_table + '\n'
-		middle += feature_summary
+		const expression = /`\{\( class-features \)\}`/
+		const tagSearch = new RegExX(expression, markdown)
+		const [leftEnd, rightStart] = tagSearch.span
+		const left = markdown[:leftEnd]
+		const right = markdown[rightStart:]
+		let middle = `As a {className}, you gain the following class features.\n`
+		middle += explainedIntro
+		middle += progTable + '\n'
+		middle += featureSummary
 
 		markdown = left + middle + right
-		markdown = re.sub(r'#{6,}', '######', markdown)
-		markdown = re.sub(r'\n{2,}', '\n\n', markdown)
-		results[class_name] = markdown
+		markdown = markdown.replace(/#{6,}/, '######', markdown)
+		markdown = markdown.replace(/\n{2,}/, '\n\n', markdown)
+		results[className] = markdown
+	}
 	return results
+}
 
 
 
-def generate_summary_table(progression):
-	columns = []
-	grouped_columns = {}
-	markdown = ''
-	progression.sort(key = lambda row: row['Level'])
+const generateSummaryTable = (progression) => {
+	const columns = []
+	const groupedColumns = {}
+	let markdown = ''
+	progression.sort((a, b) => {
+		if (a === b) {
+			return 0
+		}
+		else if (a.Level > b.Level) {
+			return 1
+		}
+		else if (a.Level < b.Level) {
+			return -1
+		}
+		else {
+			return 0
+		}
+	})
 
-	for row in progression:
-		for column in row:
-			if column not in columns:
-				columns.append(column)
-			if isinstance(row[column], dict):
-				if column not in grouped_columns:
-					grouped_columns[column] = []
-				for subcolumn, entry in row[column].items():
-					if subcolumn not in grouped_columns[column]:
-						grouped_columns[column].append(subcolumn)
+	for (const row of progression) {
+		for (const column of row) {
+			if (!(column in columns)) {
+				columns.push(column)
+			}
+			if ((row[column] instanceof Object) && !(row[column] instanceof Array)) {
+				if (!(column in groupedColumns)) {
+					groupedColumns[column] = []
+				}
+				for (const [subcolumn, entry] of Object.entries(row[column])) {
+					if (!groupedColumns[column].includes(subcolumn)) {
+						groupedColumns[column].push(subcolumn)
+					}
+				}
+			}
+		}
+	}
 
 	markdown += '<table>\n\t<thead>\n\t\t<tr>'
-	for column in columns:
-		if column in grouped_columns:
-			column_span = len(grouped_columns[column])
-			row_span = 1
-		else:
-			column_span = 1
-			row_span = 2
+	for (const column of columns) {
+		let rowSpan
+		let columnSpan
+		if (column in groupedColumns) {
+			columnSpan = groupedColumns[column].length
+			rowSpan = 1
+		}
+		else {
+			columnSpan = 1
+			rowSpan = 2
+		}
 		markdown += '\n\t\t\t<th '
-		markdown += f'colspan="{column_span}" '
-		markdown += f'rowspan="{row_span}">'
+		markdown += `colspan='${columnSpan}' `
+		markdown += `rowspan='${rowSpan}'>`
 		markdown += column
 		markdown += '</th>'
+	}
 	markdown += '\n\t\t</tr>'
 
-	if len(grouped_columns) > 0:
+	if (groupedColumns.length > 0) {
 		markdown += '\n\t\t<tr>'
-		for column in columns:
-			for subcolumn in grouped_columns.get(column, {}):
+		for (const column of columns) {
+			for (const subcolumn of groupedColumns[column]||{}) {
 				markdown += '\n\t\t\t<th '
-				markdown += 'colspan="1" '
-				markdown += 'rowspan="1">'
+				markdown += 'colspan=\'1\' '
+				markdown += 'rowspan=\'1\'>'
 				markdown += subcolumn
 				markdown += '\n\t\t\t</th>'
+			}
+		}
 		markdown += '\n\t\t</tr>'
+	}
 	markdown += '\n\t<tbody>'
 
-	for row in progression:
+	for (const row of progression) {
 		markdown += '\n\t\t<tr>'
-		entries = []
-		for column, entry in row.items():
-			if isinstance(entry, dict):
-				flag = False
-				for item in entry.values():
-					flag = True
-					if item is None: item = '&mdash;'
-					markdown += f'\n\t\t\t<td>{str(item)}</td>'
-				if not flag:
-					markdown += f'\n\t\t\t<td>&mdash;</td>'
-			else:
-				if isinstance(entry, list):
-					entry = ', '.join(entry)
-					if entry == '': entry = '&mdash;'
-				if isinstance(entry, int):
+		const entries = []
+		for (let [column, entry] of Object.entries(row)) {
+			if ((entry instanceof Object) && !(entry instanceof Array)) {
+				let flag = false
+				for (let item of entry) {
+					flag = true
+					if (item === null) {item = '&mdash;'}
+					markdown += `\n\t\t\t<td>${item}</td>`
+				}
+				if (!flag) {
+					markdown += '\n\t\t\t<td>&mdash;</td>'
+				}
+			}
+			else {
+				if (entry instanceof Array) {
+					entry = entry.join(', ')
+					if (entry === '') {entry = '&mdash;'}
+				}
+				else if (entry instanceof Number) {
 					entry = ordinal(entry)
+				}
 
-				if entry is None: entry = '&mdash;'
-				markdown += f'\n\t\t\t<td>{entry}</td>'
+				else (entry === null) {entry = '&mdash;'}
+				markdown += `\n\t\t\t<td>${entry}</td>`
+			}
+		}
 
 		markdown += '\n\t\t</tr>'
+	}
 	markdown += '\n\t</tbody>'
 	markdown += '\n</table>\n'
 
 	return markdown
+}
 
 
 
-def summarize(features, class_name):
-	# Make an array of features.
-	features = [*features.values()]
-	# Sort them nicely.
-	features.sort(key = lambda feature: feature['classes'][class_name]['progression'][0].get('Feature', ''))
-	features.sort(key = lambda feature: feature['classes'][class_name]['progression'][0]['Level'])
+const summarize = (features, className) => {
+	// Make an array of features.
+	let features = Object.values(features)
+	// Sort them nicely.
+	features.sort((a, b) => {:
+		const feature = (f) => f['classes'][className]['progression'][0]['Feature']||''
+		if (a === b) {return 0} // ! strange braces for git diff ! //
+		else {
+			if (feature(a) > feature(b)) {return 1} // ! strange braces for git diff ! //
+			else if (feature(a) < feature(b)) {return -1} // ! strange braces for git diff ! //
+			else {return 0}}}) // ! strange braces for git diff ! //
+	features.sort((a, b) => {
+		const feature = (f) => f['classes'][className]['progression'][0]['Level']||Infinity
+		if (a === b) {return 0} // ! strange braces for git diff ! //
+		else {
+			if (feature(a) > feature(b)) {return 1} // ! strange braces for git diff ! //
+			else if (feature(a) < feature(b)) {return -1} // ! strange braces for git diff ! //
+			else {return 0}}}) // ! strange braces for git diff ! //
 
-	# If the feature is not in the table,
-	# then it doesn't get described independently.
-	# It needs "parental guidance".
-	def filterer(feature):
-		good_to_go_flag = False
-		for row in feature['classes'][class_name]['progression']:
-			if 'Feature' in row:
-				good_to_go_flag = True
+	// If the feature is not in the table,
+	// then it doesn't get described independently.
+	// It needs "parental guidance".
+	const filterer = (feature) => {
+		let goodToGoFlag = false
+		for (const row of feature['classes'][className]['progression']) {
+			if ('Feature' in row) {
+				goodToGoFlag = true
 				break
-		return good_to_go_flag
-	features = filter(filterer, features)
+			}
+		}
+		return goodToGoFlag
+	}
+	features = features.filter(filterer)
 
-	# Add every feature to the markdown.
-	markdown = ''
-	for feature in features:
-		markdown += feature['classes'][class_name]['description']
+	// Add every feature to the markdown.
+	let markdown = ''
+	for (const feature of features) {
+		markdown += feature['classes'][className]['description']
 		markdown += '\n'
+	}
 	return markdown
+}
 
 
 
-def explain_class_data(class_data, class_name):
-	# this groups object holds various bullet-lists.
-	# it will be combined later into the markdown.
-	listings = {}
+const explainClassData = (classData, className) => {
+	// this groups object holds various bullet-lists.
+	// it will be combined later into the markdown.
+	const listings = {}
 
-	# the hit dice stat is great, but we need an average too.
-	hit_dice = class_data['hit-dice']
-	def get_average_die(dice):
-		expression = r'\d+(?=d)'
-		dice_count = int(re.search(expression, dice).group())
-		expression = r'(?<=d)\d+'
-		dice_size = int(re.search(expression, dice).group())
-		dice_size = 1 + (dice_size // 2)
-		total = dice_count * dice_size
-		return str(total)
-	avg_dice = get_average_die(hit_dice)
+	// the hit dice stat is great, but we need an average too.
+	const hitDice = classData['hit-dice']
+	const getAverageDie = (dice) => {
+		const expression = /\d+(?=d)/
+		const diceCount = parseInt(new RegExX(expression, dice).match)
+		const expression = /(?<=d)\d+/
+		let diceSize = parseInt(new RegExX(expression, dice).match)
+		diceSize = 1 + Math.floor(diceSize / 2)
+		const total = diceCount * diceSize
+		return toString(total)
+	}
+	const avgDice = getAverageDie(hitDice)
 
-	# the vitalities listing does not get the same structure.
-	listing = ''
+	// the vitalities listing does not get the same structure.
+	let listing = ''
 	listing += (
 		'\n- **Hit Dice**'
-		f'\n\t- {hit_dice} per {class_name} level'
+		`\n\t- ${hitDice} per ${className} level`
 		'\n- **Hit Points**'
-		f'\n\t- {hit_dice} (reroll 1\'s, or take {avg_dice}) '
-		f'+ your constitution modifier per {class_name} level'
+		`\n\t- ${hitDice} (reroll 1\'s, or take ${avgDice}) `
+		`+ your constitution modifier per ${className} level`
 	)
 	listings['Vitality'] = listing
 
 
-	def conjoin(
+	const conjoin = (
 		words,
-		conjunction='and',
-		seperator_list=[]
-	):
-		# base case
-		if len(words) < 1:
+		conjunction = 'and',
+		seperatorList = []
+	) => {
+		// base case
+		if (words.length < 1) {
 			return ''
-		elif len(words) < 2:
+		}
+		else if (len(words) < 2) {
 			return words[0]
+		}
 
-		# this generator loops through the seperator_list
-		def seperator():
-			for item in seperator_list:
+		// this generator loops through the seperatorList
+		const seperator = () => {
+			for (const item of seperatorList) {
 				yield item
-			while True:
+			}
+			while (true) {
 				yield ''
-		seperator = seperator()
+			}
+		}
+		const seperator = seperator()
 
-		# this links up words with the seperator
-		new_words = []
-		for word in words:
-			new_words.append(f'{next(seperator)}{word}')
-		words = new_words
+		// this links up words with the seperator
+		const newWords = []
+		for (const word of words) {
+			newWords.append(`${next(seperator)}${word}`)
+		}
+		words = newWords
 
-		# here's the main part of the function.
-		final_word = words[-1]
-		words = words[:-1]
-		words = ', '.join(words)
-		words += f' {conjunction} {final_word}'
+		// here's the main part of the function.
+		finalWord = words[-1]
+		words = words.slice(0, -1)
+		words = words.join(', ')
+		words += ` ${conjunction} ${finalWord}`
 		return words
+	}
 
 
-	# create the listing objects.
-	for section, section_data in class_data['structured-data'].items():
-		# Create the listing string
-		listing = ''
-		for group_type, groupings in section_data.items():
-			listing += f'\n- **{group_type}**'
-			for grouping in groupings:
-				items = []
-				for item in grouping['selection']:
-					if isinstance(item, list):
+	// create the listing objects.
+	for (const [section, sectionData] of Object.entries(classData['structured-data'])) {
+		// Create the listing string
+		let listing = ''
+		for (const [groupType, groupings] of Object.entries(sectionData)) {
+			listing += `\n- **${groupType}**`
+			for (const grouping of groupings) {
+				let items = []
+				for (let item of grouping['selection']) {
+					if (item instanceof Array) {
 						item = conjoin(item)
+					}
 					items.append(item)
+				}
 
-				# We have our items now.
-				if grouping['choose'] is None:
+				// We have our items now.
+				if (grouping['choose'] === null) {
 					items = conjoin(items)
-				elif section == 'Equipment':
-					seperator_list = [*map(lambda l: f'({l}) ', alphabet)]
-					items = conjoin(items, 'or', seperator_list)
-				elif section == 'Prerequisites':
+				}
+				else if (section === 'Equipment') {
+					const seperatorList = alphabet.split('').map(a => `(${l}) `)
+					items = conjoin(items, 'or', seperatorList)
+				}
+				else if (section === 'Prerequisites') {
 					items = conjoin(items, 'or')
-				else:
-					num_choices = grouping['choose']
-					items = f'choose {num_choices} from {conjoin(items, "and")}'
-				listing += f'\n\t- {items}'
+				}
+				else {
+					numChoices = grouping['choose']
+					items = `choose ${numChoices} from ${conjoin(items, 'and')}`
+				}
+				listing += `\n\t- ${items}`
+			}
+		}
 		listings[section] = listing
-	markdown = f'''
+	}
+	markdown = `
 ## Prerequisites
-Before you can become a {class_name}, you must fulfill some basic prerequisites.
-You are not eligible to become a {class_name} if you do not fit the minimum requirements listed below.
-{listings["Prerequisites"]}
+Before you can become a {className}, you must fulfill some basic prerequisites.
+You are not eligible to become a {className} if you do not fit the minimum requirements listed below.
+${listings['Prerequisites']}
 
 ## Vitality
 You have a pool of hit points and hit dice, which represent your vitality.
 You start with a number of hit points determined by your race.
 As your level increases, so do these pools of vitality, as noted below.
-{listings["Vitality"]}
+${listings['Vitality']}
 
 ## Proficiencies
 You have a set of capabilities that are part and parcel to your vocation.
 The following proficiencies accompany any extended by your race or background.
-{listings["Proficiencies"]}
+${listings['Proficiencies']}
 
 ## Starting Equipment
 You start with the following items, plus anything provided by your background.
-{listings["Equipment"]}
+${listings['Equipment']}
 
 ## Multiclassing
 Your DM might allow you to use the multiclassing rules outlined in Chapter 6.
@@ -259,9 +333,9 @@ These rules allow you to take levels in other classes when you level up.
 To be eligible to take a level in another class, you must fulfill its prerequisites, as well as the prerequisites for each class in which you have a level.
 
 When you first gain a level in a new class via multiclassing, you gain only some of that classes' starting proficiencies.
-These proficiencies are listed out here for {class_name}.
-{listings["Multiclassing"]}
+These proficiencies are listed out here for {className}.
+${listings['Multiclassing']}
 
-'''
+`
 	return markdown
-*****************************************************************************************/
+}
