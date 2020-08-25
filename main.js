@@ -1,38 +1,27 @@
-/*** main.py3 ****************************************************************************
-from obtain_data import collect_data
-from arrange_data import arrange_class_features
-from arrange_data import compose_class_progressions
-from write_feature_descriptions import generate_descriptions
-from write_class_summaries import generate_summaries
+import {requestFeatureData} from './request-files.graphql.js'
+import {parseFeatures} from './parse-data.js'
 
-import os
 
-def main():
-	# Obtain all features, ever.
-	all_classes, all_features = collect_data()
+(async () => {
+	// Obtain all features, ever.
+	let featureData = requestFeatureData()
+	// let classData = requestClassData()
+	featureData = await featureData
+	// classData = await classData
+	const features = parseFeatures(featureData)
+	// const classes = parseClasses(classData)
 
-	# Ensure every feature has a description for every class.
-	generate_descriptions(all_features)
+	// Ensure every feature has a description for every class.
 
-	# Categorized class features.
-	class_features = arrange_class_features(all_features)
+	// Categorized class features.
 
-	# Create a useful progression table index for classes.
-	class_progressions = compose_class_progressions(class_features)
+	// Create a useful progression table index for classes.
 
-	# Create a summary for all the classes.
-	class_summaries = generate_summaries(class_features, class_progressions, all_classes)
+	// Create a summary for all the classes.
 
-	return class_summaries
 
-if __name__ == '__main__':
-	class_summaries = main()
-	try:
-		os.makedirs('./class_summaries/')
-	except:
-		pass
-	for class_name, summary in class_summaries.items():
-		filepath = f'./class_summaries/{class_name}.md'
-		with open(filepath, 'w') as file:
-			file.write(summary)
-*****************************************************************************************/
+	// Classes and features are respectively returned
+	// once they are digested by this file
+	console.dir(classes)
+	console.dir(features)
+})()
