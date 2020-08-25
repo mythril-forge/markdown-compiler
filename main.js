@@ -1,4 +1,4 @@
-import {requestFeatureData} from './request-data.graphql.js'
+import {requestFeatureData} from './request-data.rest.js'
 // import {parseFeatures} from './parse-data.js'
 
 
