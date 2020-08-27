@@ -2,16 +2,14 @@
 // Using HTML modules, we'll import this project:
 // https://github.com/octokit/graphql.js/
 import {graphql} from 'https://cdn.pika.dev/@octokit/graphql'
-
-import {githubAccessToken as token} from './env.js'
-const references = {
-	website: 'api.github.com',
-	account: 'mythril-forge',
-	project: 'character-data',
-	branch: 'master',
-	version: 'homebrew',
-}
-
+import {
+	initOptions,
+	endpoint as website,
+	account,
+	project,
+	branch,
+	version,
+} from './variables.js'
 /*
 This file, and its functions, are the root of the entire dataset.
 Every funciton preseented here stems from this dataset.
@@ -29,14 +27,14 @@ Regardless, the D&D datset being used is Mythril Forge's Character Data.
 // https://developer.github.com/v4/explorer/
 
 // Determine repository download URL.
-const endpoint = `https://${references.website}/graphql`
+const endpoint = `https://${website}/graphql`
 
 // Determine downloaded file reference.
 const query = `
 query GetFiles {
-	organization(login: "${references.account}") {
-		repository(name: "${references.project}") {
-			object(expression: "${references.branch}:source/${references.version}/abilities/features") {
+	organization(login: "${account}") {
+		repository(name: "${project}") {
+			object(expression: "${branch}:source/${version}/abilities/features") {
 				... on Tree {
 					entries {
 						name
@@ -56,16 +54,8 @@ query GetFiles {
 /* CREATE THE DATA COLLECTOR */
 // Create an async function to make the request.
 const requestFeatureData = async () => {
-
-	// Create fetch initialization options object.
-	const options = {
-		headers: {
-			authorization: 'token ' + token,
-		}
-	}
-
 	// The request is made when fetch is called.
-	const response = graphql(query, options)
+	const response = graphql(query, initOptions)
 	const data = await response
 	const entries = data.organization.repository.object.entries
 

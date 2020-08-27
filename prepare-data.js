@@ -60,7 +60,7 @@ const prepareFeatureData = (featureData) => {
 			// It's likely that the template is valid if no class explicitly gets it.
 			// Still, it is safer to pass the template through the parser anyway.
 			const markdown = prepareDescription(template, feature, null)
-			features['markdown'] = markdown
+			feature['markdown'] = markdown
 		}
 		else {
 			// Pass. There's no markdown description for this feature.

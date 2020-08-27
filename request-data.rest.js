@@ -1,12 +1,12 @@
 /* OBTAIN CODE IMPORTS */
-import {githubAccessToken as token} from './env.js'
-const references = {
-	website: 'api.github.com',
-	account: 'mythril-forge',
-	project: 'character-data',
-	branch: 'master',
-	version: 'homebrew',
-}
+import {
+	initOptions,
+	endpoint as website,
+	account,
+	project,
+	branch,
+	version,
+} from './variables.js'
 
 /*
 This file, and its functions, are the root of the entire dataset.
@@ -18,13 +18,6 @@ These sibling files are specifically designed for either the GraphQL or REST Git
 Regardless, the D&D datset being used is Mythril Forge's Character Data.
 */
 
-/* CREATE GENERIC FETCH OPTIONS */
-const fetchInit = {
-	headers: {
-		authorization: 'token ' + token,
-	}
-}
-
 /* SET UP API INTERACTIONS */
 // Given a branch object, obtain its HEAD commit's root file-tree.
 const requestTreeFromBranch = async (
@@ -35,7 +28,7 @@ const requestTreeFromBranch = async (
 	const treeURL = treeRef['url']
 
 	// Fetch the tree.
-	const response = await fetch(treeURL, fetchInit)
+	const response = await fetch(treeURL, initOptions)
 	const tree = await response.json()
 	return tree
 }
@@ -77,7 +70,7 @@ const requestNodeFromTree = async (
 		const nodeURL = await nodeRef['url']
 
 		// Fetch the next node, and replace the current node.
-		const response = await fetch(nodeURL, fetchInit)
+		const response = await fetch(nodeURL, initOptions)
 		node = await response.json()
 	}
 
@@ -99,7 +92,7 @@ const requestBlobsFromTree = async (
 			const blobURL = blobRef['url']
 
 			// Fetch the blob and add it to the lookup object.
-			const response = await fetch(blobURL, fetchInit)
+			const response = await fetch(blobURL, initOptions)
 			const blob = await response.json()
 			blobs[blobPath] = blob
 		}
@@ -129,14 +122,14 @@ const getContentFromBlob = (
 const requestFeatureData = async () => {
 	// The initial git branch can be determined by the imported variables.
 	// Determine repository download URL.
-	const branchURL = `https://${references.website}/repos/${references.account}/${references.project}/branches/${references.branch}`
+	const branchURL = `https://${website}/repos/${account}/${project}/branches/${branch}`
 	console.warn(branchURL)
-	const response = await fetch(branchURL, fetchInit)
+	const response = await fetch(branchURL, initOptions)
 	const branchObj = await response.json()
 
 	// The module can make deeper calls once the branchObj is determined..
 	const rootTreeObj = await requestTreeFromBranch(branchObj)
-	const blobTreePath = `source/${references.version}/abilities/features/`
+	const blobTreePath = `source/${version}/abilities/features/`
 	const blobTreeObj = await requestNodeFromTree(rootTreeObj, blobTreePath)
 	const blobObjDict = await requestBlobsFromTree(blobTreeObj)
 
