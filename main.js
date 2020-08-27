@@ -1,5 +1,5 @@
-import {requestFeatureData} from './request-data.rest.js'
-// import {parseFeatures} from './parse-data.js'
+import {requestFeatureData} from './request-data.graphql.js'
+import {prepareFeatureData} from './prepare-data.js'
 
 
 (async () => {
@@ -8,7 +8,7 @@ import {requestFeatureData} from './request-data.rest.js'
 	// const classPromise = requestClassData()
 	const featureData = await featurePromise
 	// const classData = await classPromise
-	// const features = parseFeatures(featureData)
+	const features = prepareFeatureData(featureData)
 	// const classes = parseClasses(classData)
 
 	// Ensure every feature has a description for every class.
@@ -22,7 +22,7 @@ import {requestFeatureData} from './request-data.rest.js'
 	// Classes and features are respectively returned
 	// once they are digested by this file
 
-	console.dir(featureData)
+	console.dir(features)
 	// console.dir(classes)
 	// console.dir(features)
 })()
