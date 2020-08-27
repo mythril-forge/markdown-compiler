@@ -1,34 +1,40 @@
-const arrangeClassFeatures = (features) => {
+const slotFeaturesByClass = (features) => {
 	/*
-	This will take in the features dataset.
-	Each feature in the dataset will be categorized by class.
-	A feature can be a part of zero or many classes.
-	For example, a few classes get the Expertise feature.
-	However, no class explicitly gets the Dueling feature.
+	This will take in the features dataset. Each feature will be slotted by class.
+	Note that a single feature can be slotted for zero or many classes.
+	For example, a few classes get "Expertise", but none explicitly get "Dueling".
 	The compiled collection of categorized features returns.
 	---
-	Each feature listed is a pointer to the features dataset.
-	This collection of data works reliably with memory.
+	Each feature in the return object is pointed to, so it works well in memory.
 	*/
-	// Create base classFeatures dictionary object.
-	const classFeatures = {} // *this will be returned later*
+	// Create base featuresByClass dictionary object.
+	// Fill it in to get some nice fat data.
+	const featuresByClass = {} // *this will be returned later*
 
 	// Loop through all given features.
 	// Each feature may exist for zero or many classes.
 	// This works fine in memory; many classes' entries may point to the same feature.
 	for (const [featureName, feature] of Object.entries(features)) {
-		for (const className in feature['classes']||{}) {
+
+		// Loop through each feature's classes for each feature.
+		for (const className in feature['classes'] || {}) {
+
+			// Its only featured if it has a progression for this class.
 			if ('progression' in feature['classes'][className]) {
-				if (!(className in classFeatures)) {
-					classFeatures[className] = {}
+
+				// Add new classes to the featuresByClass object.
+				if (!(className in featuresByClass)) {
+					featuresByClass[className] = {}
 				}
-				classFeatures[className][featureName] = feature
+
+				// Add new features to the featuresByClass object.
+				featuresByClass[className][featureName] = feature
 			}
 		}
 	}
 
-	// Return populated classFeatures dictionary.
-	return classFeatures
+	// Return populated featuresByClass dictionary.
+	return featuresByClass
 }
 
 
@@ -187,7 +193,8 @@ const composeClassProgressions = (classFeatures) => {
 	// All class progressions have been completely filled.
 	return classProgressions
 }
+
 export {
-	arrangeClassFeatures,
-	composeClassProgressions,
+	slotFeaturesByClass,
+	// composeClassProgressions,
 }
