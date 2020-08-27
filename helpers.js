@@ -1,5 +1,4 @@
-
-
+const alphabet = 'abcdefghijklmnopqrstuvwxyz'
 
 const ordinal = (level) => {
 	/*
@@ -32,6 +31,7 @@ const ordinal = (level) => {
 		return level.toString() + 'th'
 	}
 }
+
 // read levels into markdown
 const readLevels = (...levels) => {
 	/*
@@ -71,7 +71,7 @@ const readLevels = (...levels) => {
 		)
 	}
 	else {
-		text = (
+		let text = (
 			`${level.next().value} level and again at ${level.next().value}, `
 		)
 
@@ -94,4 +94,4 @@ const readLevels = (...levels) => {
 	}
 }
 
-export {ordinal, readLevels}
+export {alphabet, ordinal, readLevels}
