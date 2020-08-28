@@ -39,7 +39,7 @@ const slotFeaturesByClass = (features) => {
 
 
 
-const composeClassProgressions = (classFeatures) => {
+const getClassProgression = (classFeatures) => {
 	/*
 	This takes in compiled classFeatures.
 	By looping through each class and feature, this function
@@ -47,41 +47,33 @@ const composeClassProgressions = (classFeatures) => {
 	By default, the progression table will be sorted by level.
 	Each class has a progression table, and each get returned.
 	*/
-	// Create a sortedClassFeatures dictionary object.
-	// Also create a classProgression dictionary object.
-	const sortedClassFeatures = {}
-	const classProgressions = {} // *this will be returned later*
-
-
-	// Loop through each and every className.
-	for (const className in classFeatures) {
+	const getOne = (className) => {
 		// Initialize empty array to hold class progression rows.
 		// Each row will have a distinct level.
 		// ---
-		// An object or dictionary could have been used, but...
-		// This data will be ported over to JSON.
+		// An object or dictionary could have been used, but this will be ported to JSON.
 		// JSON doesn't support integer keys. I don't like that.
-		const classProgression = []
-		classProgressions[className] = classProgression
-		for (const level in [...(new Array(20)).keys()].map(lv=>lv+1)) {
-			classProgression.push({
-				'Level': level,
-				'Features': [],
+		const progression = []
+		let maxLevel = 20
+		for (let level in [...(new Array(maxLevel)).keys()]) {
+			level = parseInt(level) + 1
+			progression.push({
+				Level: level,
+				Features: [],
 			})
 		}
 
-		// Create an array of class features, sorted by names.
-		// These only contain certain features; specifically, the
-		// 	ones for this class that appear in the progression.
+		// Create an array of class features, sorted alphabetically by name.
+		// These only contain some features; specifically, ones in this classes' progression.
 		const sortedFeatures = Object.values(classFeatures[className])
-		sortedFeatures.sort((a, b) => {
-			if (a === b) {
+		sortedFeatures.sort((feature01, feature02) => {
+			if (feature01 === feature02) {
 				return 0
 			}
-			else if (a.slug > b.slug) {
+			else if (feature01['slug'] > feature02['slug']) {
 				return 1
 			}
-			else if (a.slug < b.slug) {
+			else if (feature01['slug'] < feature02['slug']) {
 				return -1
 			}
 			else {
@@ -92,21 +84,22 @@ const composeClassProgressions = (classFeatures) => {
 		// Loop through each sorted feature's data, in order.
 		for (const feature of sortedFeatures) {
 
-			// Here, progression is short for feature progression.
-			// 	(rather than the whole class progression)
-			progression = feature['classes'][className]['progression']
+			// Get this feature's progression (rather than the whole class progression).
+			const featureProgression = feature['classes'][className]['progression']
+			if (featureProgression === undefined) {
+				continue
+			}
 
-			// Each row in the progression dictionary should
-			// 	already be sorted numerically by levels.
-			// Even so, it may be safer to just re-sort it here.
-			progression.sort((a, b) => {
-				if (a === b) {
+			// Each row in the featureProgression dictionary should already be sorted by levels.
+			// Still, its safer to just re-sort it here; dictionaries are canonically unsorted.
+			featureProgression.sort((row01, row02) => {
+				if (row01 === row02) {
 					return 0
 				}
-				else if (a.Level > b.Level) {
+				else if (row01['Level'] > row02['Level']) {
 					return 1
 				}
-				else if (a.Level < b.Level) {
+				else if (row01['Level'] < row02['Level']) {
 					return -1
 				}
 				else {
@@ -115,37 +108,36 @@ const composeClassProgressions = (classFeatures) => {
 			})
 
 			// Loop through each row of this feature's progression.
-			// Each feature has a progression that should be added
-			// 	to the entire class progression table.
-			for (const row of progression) {
-				const level = row.Level
-				for (const [column, value] of Object.entries(row)) {
-
+			// Each feature progression needs to be added to the class progression.
+			for (const featureRow of featureProgression) {
+				const level = featureRow['Level']
+				const cells = Object.entries(featureRow)
+				for (const [featureColumn, value] of cells) {
 					// "Level" already exists in all rows.
-					if (column === 'Level') {
-						// pass
-					}
+					if (featureColumn === 'Level') {/* do nothing */}
 
-					else if (column === 'Feature') {
+					// "Feature" represents a significant class ability.
+					else if (featureColumn === 'Feature') {
 						// Filter the entry whose level is equal.
-						const filterer = row => row.Level === level
-						const entry = classProgression.filter(filterer)
+						const primeRow = progression.find((row) => {
+							return row['Level'] === level
+						})
 						// Once we have this entry, we can add to it.
 						// Notice Features is plural, denoting an array.
-						entry['Features'].push(value)
+						primeRow['Features'].push(value)
 					}
 
+					// Anything else represents a custom column (not a Level or Feature).
 					else {
-						// The column is custom (not a Level or Feature).
 						// We have to loop through every level of entry.
-						// If it hasn't been added, add it with None.
-						// If the level is valid, replace it with value.
-						for (const entry of classProgression) {
-							if (!(column in entry)) {
-								entry[column] = null
+						// If it hasn't been added, add it with a null value.
+						// If the level is valid, replace it with the value.
+						for (const primeRow of progression) {
+							if (!(featureColumn in primeRow)) {
+								primeRow[featureColumn] = null
 							}
-							if (entry.Level >= row.Level) {
-								entry[column] = value
+							if (primeRow['Level'] >= featureRow['Level']) {
+								primeRow[featureColumn] = value
 							}
 						}
 					}
@@ -153,48 +145,68 @@ const composeClassProgressions = (classFeatures) => {
 			}
 
 			// What's more -- the columns could be in a group!
+			// For example, spell slots use a group of slot levels.
 			const groupEntries = {}
-			for (const row of progression) {
-				for (const [column, group] of Object.entries(row)) {
-					if ((group instanceof Object) && !(group instanceof Array)) {
-						if (!(column in groupEntries)) {
-							groupEntries[column] = []} // ! brackets for git diff ! //
-						for (const item of group) {
-							if (!(item in groupEntries[column])) {
-								groupEntries[column].push(item)}}}}} // ! brackets for git diff ! //
+			for (const primeRow of progression) {
+				const cells = Object.entries(primeRow)
+				for (const [primeColumn, group] of cells) {
+					if (group instanceof Object && !(group instanceof Array)) {
+						if (!(primeColumn in groupEntries)) {
+							groupEntries[primeColumn] = []
+						}
+						for (const item in group) {
+							if (!(groupEntries[primeColumn].includes(item))) {
+								groupEntries[primeColumn].push(item)
+							}
+						}
+					}
+				}
+			}
+
 			// Now we have all the group keys.
-			for (const row of progression) {
-				for (const [column, group] of Object.entries(row)) {
-					if ((group instanceof Object) && !(group instanceof Array)) {
-						for (const subcolumn of  groupEntries[column]) {
-							if (!subcolumn in group) {
-								group[subcolumn] = null }}}}} // ! brackets for git diff ! //
-			// Phew... All the keys will have been filled.
+			for (const primeRow of progression) {
+				const cells = Object.entries(primeRow)
+				for (const [primeColumn, group] of cells) {
+					if (group instanceof Object && !(group instanceof Array)) {
+						for (const subcolumn of groupEntries[primeColumn]) {
+							if (!(subcolumn in group)) {
+								group[subcolumn] = null
+							}
+						}
+					}
+				}
+			}
+			// Phew... All the keys will have been filled by now.
 		}
 
-		// Revert and sort class progresions
-		classProgression.sort((a, b) => {
-			if (a === b) {
+		// Revert and sort class progresion before returning.
+		progression.sort((row01, row02) => {
+			if (row01 === row02) {
 				return 0
 			}
-			else if (a.Level > b.Level) {
+			else if (row01['Level'] > row02['Level']) {
 				return 1
 			}
-			else if (a.Level < b.Level) {
+			else if (row01['Level'] < row02['Level']) {
 				return -1
 			}
 			else {
 				return 0
 			}
 		})
-		classProgressions[className] = classProgression
+		return progression
 	}
 
+	// with that helper function, we can get all classes!
+	const classProgression = {}
+	for (const className in classFeatures) {
+		classProgression[className] = getOne(className)
+	}
 	// All class progressions have been completely filled.
-	return classProgressions
+	return classProgression
 }
 
 export {
 	slotFeaturesByClass,
-	// composeClassProgressions,
+	getClassProgression,
 }
