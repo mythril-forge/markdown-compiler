@@ -1,5 +1,6 @@
 import {requestFeatureData} from './request-data.graphql.js'
 import {prepareFeatureData} from './prepare-data.js'
+import {slotFeaturesByClass, getClassProgression} from './parse-data.js'
 
 
 (async () => {
@@ -11,6 +12,8 @@ import {prepareFeatureData} from './prepare-data.js'
 	const features = prepareFeatureData(featureData)
 	// const classes = parseClasses(classData)
 
+	const featuresByClass = slotFeaturesByClass(features)
+	console.dir(getClassProgression(featuresByClass))
 	// Ensure every feature has a description for every class.
 
 	// Categorized class features.
@@ -22,7 +25,7 @@ import {prepareFeatureData} from './prepare-data.js'
 	// Classes and features are respectively returned
 	// once they are digested by this file
 
-	console.dir(features)
+	// console.dir(features)
 	// console.dir(classes)
 	// console.dir(features)
 })()
