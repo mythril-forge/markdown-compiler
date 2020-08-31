@@ -1,42 +1,103 @@
-const slotFeaturesByClass = (features) => {
-	/*
-	This will take in the features dataset. Each feature will be slotted by class.
-	Note that a single feature can be slotted for zero or many classes.
-	For example, a few classes get "Expertise", but none explicitly get "Dueling".
-	The compiled collection of categorized features returns.
-	---
-	Each feature in the return object is pointed to, so it works well in memory.
-	*/
-	// Create base featuresByClass dictionary object.
-	// Fill it in to get some nice fat data.
-	const featuresByClass = {} // *this will be returned later*
+/*
+This is a filterer. Rather, it returns a filterer function.
+This inception is done to allow additional parameters to be passed in.
+Its expected that this filterer will be used with the features array.
+*/
+const filterByClass = (className) => {
 
-	// Loop through all given features.
-	// Each feature may exist for zero or many classes.
-	// This works fine in memory; many classes' entries may point to the same feature.
-	for (const [featureName, feature] of Object.entries(features)) {
+	// Now that we have a className, we can use it to create a new function.
+	const filterer = (feature) => {
 
-		// Loop through each feature's classes for each feature.
-		for (const className in feature['classes'] || {}) {
+		// It's better to ask for forgiveness than to ask for permission.
+		try {
+			// This is featured in our class only if a progression row has a "Feature" keyword.
+			return feature['classes'][className]['progression'].some(row => 'Feature' in row)
+		}
 
-			// Its only featured if it has a progression for this class.
-			if ('progression' in feature['classes'][className]) {
-
-				// Add new classes to the featuresByClass object.
-				if (!(className in featuresByClass)) {
-					featuresByClass[className] = {}
-				}
-
-				// Add new features to the featuresByClass object.
-				featuresByClass[className][featureName] = feature
-			}
+		// If there is some error, its because the expected keys or values didn't exist.
+		catch {
+			return false
 		}
 	}
 
-	// Return populated featuresByClass dictionary.
-	return featuresByClass
+	// Return a function.
+	return filterer
 }
 
+
+/*
+This will take in the features dataset. Each feature will be slotted by class.
+Note that a single feature can be slotted for zero or many classes.
+For example, a few classes get "Expertise", but none explicitly get "Dueling".
+The compiled collection of categorized features returns.
+---
+Each feature in the return object is pointed to, so it works well in memory.
+*/
+const groupByClasses = () => {
+
+	// Create another function to be returned.
+	const reducer = (featuresPerClass, feature) => {
+
+		// Loop through each class within each feature.
+		const classNames = Object.keys(feature['classes'] || {})
+		for (const className of classNames) {
+
+			// It's better to ask for forgiveness than to ask for permission.
+			try {
+
+				// This is featured in our class only if a progression row has a "Feature" keyword.
+				if (feature['classes'][className]['progression'].some(row => 'Feature' in row)) {
+
+					// Make this classes' entry if it doesn't yet exist.
+					if (!(className in featuresPerClass)) {
+						featuresPerClass[className] = []
+					}
+
+					// Add the feature to the entry.
+					featuresPerClass[className].push(feature)
+				}
+			}
+
+			// If there is some error, its because the expected keys or values didn't exist.
+			catch {
+				continue
+			}
+		}
+
+		// Pass over the manipulated object.
+		return featuresPerClass
+	}
+
+	// Return a reducer function.
+	return reducer
+}
+
+
+/*
+This just creates an object by feature names.
+Needed since the cleaned object is an array.
+*/
+const groupByName = () => {
+
+	// Create another function to be returned.
+	const reducer = (featuresByName, feature) => {
+
+		// The slug is required, so it must exist in all features.
+		const slug = feature['slug']
+
+		// This slug really shouldn't exist in the dictionary yet.
+		if (slug in featuresByName) {
+			throw new Error('Feature name collision detected.')
+		}
+
+		// Add the feature to the object with this slug and pass it over.
+		featuresByName[slug] = feature
+		return featuresByName
+	}
+
+	// Return a reducer function.
+	return reducer
+}
 
 
 const getClassProgression = (classFeatures) => {
@@ -207,6 +268,8 @@ const getClassProgression = (classFeatures) => {
 }
 
 export {
-	slotFeaturesByClass,
+	filterByClass,
+	groupByClasses,
+	groupBySlug,
 	getClassProgression,
 }
