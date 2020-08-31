@@ -1,24 +1,6 @@
 import {readLevels} from './helpers.js'
 import {RegExX} from './reg-exx.js'
 
-/* SET UP NICHE HELPER FUNCTIONS */
-// To parse through the file data in the API, each file name needs
-const collectNamesFromPaths = (filenames, filepath) => {
-
-	// Obtain the proper filename from the filepath.
-	const fragments = filepath.split('.')
-
-	// Remove file extention; its not needed here.
-	fragments.pop()
-
-	// Reconnect fragments to get true filename.
-	const filename = fragments.join('.')
-
-	// Add the filename to the full set of filenames.
-	filenames.add(filename)
-	return filenames
-}
-
 /* PREPARE RETRIEVED API DATA */
 // Using the text from the API, this module can properly parse JSON.
 // The JSON entered into normal JavaScript objects, and the markdown entry is added.
@@ -31,7 +13,7 @@ const prepareFeatureData = (featureData) => {
 	const filenames = filepaths.reduce(collectNamesFromPaths, new Set([]))
 
 	// Fill in a new object with data as each filename is iterated over.
-	const features = {}
+	const features = []
 	for (const filename of filenames) {
 
 		// Gather the filepaths to get data.
@@ -40,7 +22,7 @@ const prepareFeatureData = (featureData) => {
 
 		// It's not okay if the JSON file doesn't exist.
 		const feature = JSON.parse(featureData[jsonFilepath])
-		features[filename] = feature
+		features.push(feature)
 
 		// It's okay if the markdown file doesn't exist.
 		const template = featureData[descFilepath] || null
@@ -71,7 +53,6 @@ const prepareFeatureData = (featureData) => {
 	return features
 }
 
-/* PARSE CUSTOM RETRIEVED MARKDOWN DATA */
 const prepareDescription = (template, feature, className) => {
 	// Base case: there is no valid className.
 	if (className === null) {
@@ -202,6 +183,24 @@ const prepareDescription = (template, feature, className) => {
 	// Return newly cleaned markdown template.
 	// By now, the template should be a fully valid markdown string.
 	return template
+}
+
+/* SET UP NICHE HELPER FUNCTIONS */
+// To parse through the file data in the API, each file name needs
+const collectNamesFromPaths = (filenames, filepath) => {
+
+	// Obtain the proper filename from the filepath.
+	const fragments = filepath.split('.')
+
+	// Remove file extention; its not needed here.
+	fragments.pop()
+
+	// Reconnect fragments to get true filename.
+	const filename = fragments.join('.')
+
+	// Add the filename to the full set of filenames.
+	filenames.add(filename)
+	return filenames
 }
 
 /* MAKE MODULE EXPORTS */
