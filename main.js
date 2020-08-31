@@ -1,6 +1,10 @@
 import {requestFeatureData} from './request-data.graphql.js'
 import {prepareFeatureData} from './prepare-data.js'
-import {slotFeaturesByClass, getClassProgression} from './parse-data.js'
+import {
+	groupByClasses,
+	groupByName,
+	filterByClass,
+} from './parse-data.js'
 
 
 (async () => {
@@ -10,10 +14,12 @@ import {slotFeaturesByClass, getClassProgression} from './parse-data.js'
 	const featureData = await featurePromise
 	// const classData = await classPromise
 	const features = prepareFeatureData(featureData)
-	// const classes = parseClasses(classData)
+	// const classes = prepareClassData(classData)
 
-	const featuresByClass = slotFeaturesByClass(features)
-	console.dir(getClassProgression(featuresByClass))
+	const featuresByClass = features.reduce(groupByClasses(), {})
+	const featuresByName = features.reduce(groupByName(), {})
+	const featuresForRogue = features.filter(filterByClass('rogue'))
+	// console.dir(getClassProgression(featuresByClass))
 	// Ensure every feature has a description for every class.
 
 	// Categorized class features.
@@ -25,7 +31,9 @@ import {slotFeaturesByClass, getClassProgression} from './parse-data.js'
 	// Classes and features are respectively returned
 	// once they are digested by this file
 
-	// console.dir(features)
-	// console.dir(classes)
-	// console.dir(features)
+	console.info('features:')
+	console.dir(features)
+	console.dir(featuresByName)
+	console.info('grouped:')
+	console.dir(featuresForRogue)
 })()
