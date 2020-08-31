@@ -1,15 +1,16 @@
 /*
-This is a filterer. Rather, it returns a filterer function.
+While this isn't itself a filterer, it returns a filterer function.
 This inception is done to allow additional parameters to be passed in.
-Its expected that this filterer will be used with the features array.
+As other functions here, this is to be used with arrays of features.
 */
 const filterByClass = (className) => {
 
-	// Now that we have a className, we can use it to create a new function.
+	// We have a class name, and can use it to create a function without it as a parameter.
 	const filterer = (feature) => {
 
 		// It's better to ask for forgiveness than to ask for permission.
 		try {
+
 			// This is featured in our class only if a progression row has a "Feature" keyword.
 			return feature['classes'][className]['progression'].some(row => 'Feature' in row)
 		}
@@ -26,12 +27,13 @@ const filterByClass = (className) => {
 
 
 /*
-This will take in the features dataset. Each feature will be slotted by class.
+While this isn't itself a reducer, it returns a reducer function (like the others here).
+This inception is done to be consistent with helpers that need additional parameters.
+To get an easy-to-access dictionary of features, this can be called upon in arrays.
+---
 Note that a single feature can be slotted for zero or many classes.
 For example, a few classes get "Expertise", but none explicitly get "Dueling".
 The compiled collection of categorized features returns.
----
-Each feature in the return object is pointed to, so it works well in memory.
 */
 const groupByClasses = () => {
 
@@ -45,7 +47,7 @@ const groupByClasses = () => {
 			// It's better to ask for forgiveness than to ask for permission.
 			try {
 
-				// This is featured in our class only if a progression row has a "Feature" keyword.
+				// This is featured in our class if a progression row has a "Feature" keyword.
 				if (feature['classes'][className]['progression'].some(row => 'Feature' in row)) {
 
 					// Make this classes' entry if it doesn't yet exist.
@@ -64,18 +66,19 @@ const groupByClasses = () => {
 			}
 		}
 
-		// Pass over the manipulated object.
+		// Pass over the manipulated object to the next item in the reducer chain.
 		return featuresPerClass
 	}
 
-	// Return a reducer function.
+	// Return the new reducer function.
 	return reducer
 }
 
 
 /*
-This just creates an object by feature names.
-Needed since the cleaned object is an array.
+While this isn't itself a reducer, it returns a reducer function (like the others here).
+This just creates an object from an array of features, with keys being feature names.
+The function is needed to objectify the original array of features for easy-access.
 */
 const groupByName = () => {
 
@@ -95,19 +98,21 @@ const groupByName = () => {
 		return featuresByName
 	}
 
-	// Return a reducer function.
+	// Return the new reducer function.
 	return reducer
 }
 
 
+
+/*
+While this isn't itself a reducer, it returns a reducer function.
+The reducer returns a special progression array with all implied entries filled in.
+It assumes all features in the array are a part of the progression.
+---
+By default, the progression table will be sorted by level.
+Each class has a progression table, and each get returned.
+*/
 const getClassProgression = (classFeatures) => {
-	/*
-	This takes in compiled classFeatures.
-	By looping through each class and feature, this function
-	is able to create a table for players to use as an index.
-	By default, the progression table will be sorted by level.
-	Each class has a progression table, and each get returned.
-	*/
 	const getOne = (className) => {
 		// Initialize empty array to hold class progression rows.
 		// Each row will have a distinct level.
