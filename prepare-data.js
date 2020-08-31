@@ -13,7 +13,7 @@ const prepareFeatureData = (featureData) => {
 	const filenames = filepaths.reduce(collectNamesFromPaths, new Set([]))
 
 	// Fill in a new object with data as each filename is iterated over.
-	const features = {}
+	const features = []
 	for (const filename of filenames) {
 
 		// Gather the filepaths to get data.
@@ -22,7 +22,7 @@ const prepareFeatureData = (featureData) => {
 
 		// It's not okay if the JSON file doesn't exist.
 		const feature = JSON.parse(featureData[jsonFilepath])
-		features[filename] = feature
+		features.push(feature)
 
 		// It's okay if the markdown file doesn't exist.
 		const template = featureData[descFilepath] || null
