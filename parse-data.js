@@ -102,39 +102,44 @@ const groupByName = () => {
 }
 
 
-
 /*
-While this isn't itself a reducer, it returns a reducer function.
-The reducer returns a special progression array with all implied entries filled in.
-It assumes all features in the array are a part of the progression.
----
-By default, the progression table will be sorted by level.
-Each class has a progression table, and each get returned.
+While this isn't itself a mapper, it returns a mapper function.
+This mapper returns a series of progression arrays with all implied entries filled in.
+It doesn't track feature names, but it doesn't have to either.
 */
 const fillProgression = (className, levelOffset = 0, levelMaximum = 20) => {
+	const levelSpan = levelMaximum - levelOffset
 
 	// Create another function to be returned.
-	const reducer = (progression, feature) => {
+	const mapper = (feature) => {
 
-		// Determine the progression array for this feature, if it is valid.
-		// Each progression row has a distinct level, offset by the optional metaparameter.
+		// Determine the full progression array for this feature.
+		// Each progression row has a distinct level, offset by the optional metaparameters.
 		// ---
 		// An object or dictionary could have been used, but this will be ported to JSON.
-		// Note that JSON doesn't support integer keys. I don't like that.
+		// Note that JSON doesn't support integer keys; arrays of objects are used instead.
+		const progressionFull = [...new Array(levelSpan)].map((_, index) => {
+			const level = 1 + index + levelOffset
+			const row = {
+				Level: level,
+				Features: [],
+			}
+			return row
+		})
 
 		try {
-			// Get this feature's progression (rather than the whole class progression).
-			// Also, make a copy of it since we plan to sort and otherwise manipulate it.
+			// Get this feature's progression. Make a copy since we plan to manipulate it.
 			var progressionData = [...feature['classes'][className]['progression']]
 		}
 
 		catch {
-			// if there was some error, this feature can't be added.
-			return progression
+			// If there was some error, this feature doesn't have progression.
+			var progressionData = []
 		}
 
-		progressionData = progressionData.filter((dataRow) => {
-			return dataRow['Level'] + levelOffset <= levelMaximum
+		progressionData = progressionData.filter((row) => {
+			// Remove all rows that don't satisfy the metaparameters.
+			return row['Level'] + levelOffset <= levelMaximum
 		})
 
 		// Each row in the progressionData dictionary should already be sorted by levels.
@@ -161,63 +166,60 @@ const fillProgression = (className, levelOffset = 0, levelMaximum = 20) => {
 			for (const [column, data] of dataCells) {
 
 				// "Level" already exists in all rows.
-				if (column === 'Level') {/* do nothing */}
+				if (column === 'Level') {
+					continue
+				}
 
 				// "Feature" represents a significant class ability.
 				else if (column === 'Feature') {
 
-					// Filter the entry whose level is equal.
-					const row = progression.find((row) => {
-						return row['Level'] === dataRow['Level'] + levelOffset
+					// Find the full row entry whose level matches.
+					const fullRow = progressionFull.find((fullRow) => {
+						return fullRow['Level'] === dataRow['Level'] + levelOffset
 					})
 
-					// Once we have this entry, we can add to it.
-					// Notice Features is plural, denoting an array.
-					row['Features'].push(data)
+					// Once we have this entry, we can add data to its "Features" array.
+					fullRow['Features'].push(data)
 				}
 
-				// Anything else represents a custom column (not a Level or Feature).
-				else {
+				// "Spell Slots per Slot Level" is special. It has several subcolumns.
+				else if (column === 'Spell Slots per Slot Level') {
+					for (const fullRow of progressionFull) {
 
-					// We have to loop through every level of entry in this case.
-					for (const row of progression) {
+						// If it hasn't been added, initialize the column with an empty object.
+						if (!(column in fullRow)) {
+							fullRow[column] = {}
+						}
 
-						// Before anything, check whether the cell data's type is string.
-						if (typeof data === 'string' || typeof data === 'number') {
+						// Loop through every subcolumn.
+						const subdataCells = Object.entries(data)
+						for (const [subcolumn, subdata] of subdataCells) {
 
-							// If it hasn't been added, initialize it with a null value.
-							if (!(column in row)) {
-								row[column] = null
+							// The subcolumn name should be in every row, too.
+							if (!(subcolumn in fullRow[column])) {
+								fullRow[column][subcolumn] = null
 							}
 
 							// If the level is valid, replace it with the value.
-							if (row['Level'] >= dataRow['Level'] + levelOffset) {
-								row[column] = data
+							if (fullRow['Level'] >= dataRow['Level'] + levelOffset) {
+								fullRow[column][subcolumn] = subdata
 							}
 						}
+					}
+				}
 
-						// If its not a string, it should be an object.
-						else if (typeof data === 'object') {
+				// Anything else represents a custom column.
+				else {
+					for (const fullRow of progressionFull) {
 
-							// The column name should be in every row. As an object, it has subcolumns.
-							if (!(column in row)) {
-								row[column] = {}
-							}
+						// The subcolumn name should be in every row, too.
+						if (!(column in fullRow)) {
+							fullRow[column] = null
+						}
 
-							// Add subdata to the respective row + subcolumns.
-							const subdataCells = Object.entries(data)
-							for (const [subcolumn, subdata] of subdataCells) {
-
-								// The subcolumn name should be in every row, too.
-								if (!(subcolumn in row[column])) {
-									row[column][subcolumn] = null
-								}
-
-								// If the level is valid, replace it with the value.
-								if (row['Level'] >= dataRow['Level'] + levelOffset) {
-									row[column][subcolumn] = subdata
-								}
-							}
+						// If the level is valid, replace it with the value.
+						if (fullRow['Level'] >= dataRow['Level'] + levelOffset) {
+							fullRow[column] = data
 						}
 					}
 				}
@@ -225,12 +227,13 @@ const fillProgression = (className, levelOffset = 0, levelMaximum = 20) => {
 		}
 
 		// Pass the progression object to the next chain item.
-		return progression
+		return progressionFull
 	}
 
-	// Return the new reducer function.
-	return reducer
+	// Return the new mapper function.
+	return mapper
 }
+
 
 export {
 	filterByClass,
