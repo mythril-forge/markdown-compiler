@@ -1,7 +1,8 @@
 /* OBTAIN CODE IMPORTS */
 // Using HTML modules, we'll import this project:
 // https://github.com/octokit/graphql.js/
-import {graphql} from 'https://cdn.pika.dev/@octokit/graphql'
+import {graphql} from 'https://cdn.skypack.dev/@octokit/graphql'
+
 import {
 	initOptions,
 	endpoint as website,
