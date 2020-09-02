@@ -8,7 +8,7 @@ import {
 } from './parse-data.js'
 
 
-(async () => {
+const main = async () => {
 	// Obtain all features, ever.
 	const featurePromise = requestFeatureData()
 	// const classPromise = requestClassData()
@@ -59,4 +59,6 @@ import {
 	console.dir(featuresForClass)
 	console.info('progression:')
 	console.dir(featureProgression)
-})()
+}
+
+document.getElementById('fetch-button').addEventListener('click', main)
