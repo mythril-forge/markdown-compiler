@@ -22,7 +22,7 @@ class RegExX {
 
 	get span () {
 		if (this.array.index === undefined) {
-			return [undefined, undefined]
+			return [...new Array(2)]
 		}
 		return [this.array.index, this.regex.lastIndex]
 	}

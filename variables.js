@@ -16,7 +16,7 @@ const initOptions = {
 const endpoint = 'api.github.com'
 const account = 'mythril-forge'
 const project = 'character-data'
-const branch = 'master'
+const branch = 'dev'
 const version = 'homebrew'
 
 /* MAKE MODULE EXPORTS */
