@@ -108,7 +108,6 @@ This mapper returns a series of progression arrays with all implied entries fill
 It doesn't track feature names, but it doesn't have to either.
 */
 const fillProgression = (className, levelOffset = 0, levelMaximum = 20) => {
-	const levelSpan = levelMaximum - levelOffset
 
 	// Create another function to be returned.
 	const mapper = (feature) => {
@@ -118,8 +117,8 @@ const fillProgression = (className, levelOffset = 0, levelMaximum = 20) => {
 		// ---
 		// An object or dictionary could have been used, but this will be ported to JSON.
 		// Note that JSON doesn't support integer keys; arrays of objects are used instead.
-		const progressionFull = [...new Array(levelSpan)].map((_, index) => {
-			const level = 1 + index + levelOffset
+		const progressionFull = [...new Array(20)].map((_, index) => {
+			const level = 1 + index
 			const row = {
 				Level: level,
 				Features: [],
@@ -183,7 +182,8 @@ const fillProgression = (className, levelOffset = 0, levelMaximum = 20) => {
 				}
 
 				// "Spell Slots per Slot Level" is special. It has several subcolumns.
-				else if (column === 'Spell Slots per Slot Level') {
+				// Certain special columns also have similar structure, typeof object.
+				else if (column === 'Spell Slots per Slot Level' || typeof data === 'object') {
 					for (const fullRow of progressionFull) {
 
 						// If it hasn't been added, initialize the column with an empty object.
@@ -208,7 +208,7 @@ const fillProgression = (className, levelOffset = 0, levelMaximum = 20) => {
 					}
 				}
 
-				// Anything else represents a custom column.
+				// Anything else represents a simple custom column.
 				else {
 					for (const fullRow of progressionFull) {
 
@@ -276,13 +276,13 @@ const mergeProgression = () => {
 							if (!(subcolumn in fullRow[column])) {
 								fullRow[column][subcolumn] = subdata
 							}
-							else {
+							else if (subdata !== null) {
 								fullRow[column][subcolumn] += subdata
 							}
 						}
 					}
 					else {
-						throw new Error('Collision detected!')
+						console.error('Collision detected:', column)
 					}
 				}
 			}

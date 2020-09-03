@@ -26,8 +26,9 @@ import {
 	const featuresForClass = features.filter(filterByClass(className))
 
 	// Create a useful progression table index for this class.
-	const featureProgression = featuresForClass.map(fillProgression(className, 0, 10))
-	// const progressionTable = featureProgression.reduce(mergeProgression())
+	const clericProgression = features.filter(filterByClass('cleric')).map(fillProgression('cleric', 0, 4))
+	const wizardProgression = features.filter(filterByClass('wizard')).map(fillProgression('wizard', 4, 20))
+	const progressionTable = [...wizardProgression, ...clericProgression].reduce(mergeProgression())
 
 	// Create a summary for all the classes.
 
@@ -40,6 +41,5 @@ import {
 	console.info('grouped:')
 	console.dir(featuresForClass)
 	console.info('progression:')
-	console.dir(featureProgression)
-	// console.dir(progressionTable)
+	console.dir(progressionTable)
 })()
