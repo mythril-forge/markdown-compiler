@@ -1,108 +1,4 @@
 /*
-While this isn't itself a filterer, it returns a filterer function.
-This inception is done to allow additional parameters to be passed in.
-As other functions here, this is to be used with arrays of features.
-*/
-const filterByClass = (className) => {
-
-	// We have a class name, and can use it to create a function without it as a parameter.
-	const filterer = (feature) => {
-
-		// It's better to ask for forgiveness than to ask for permission.
-		try {
-
-			// This is featured in our class only if a progression row has a "Feature" keyword.
-			return feature['classes'][className]['progression'] !== undefined
-		}
-
-		// If there is some error, its because the expected keys or values didn't exist.
-		catch {
-			return false
-		}
-	}
-
-	// Return a function.
-	return filterer
-}
-
-
-/*
-While this isn't itself a reducer, it returns a reducer function (like the others here).
-This inception is done to be consistent with helpers that need additional parameters.
-To get an easy-to-access dictionary of features, this can be called upon in arrays.
----
-Note that a single feature can be slotted for zero or many classes.
-For example, a few classes get "Expertise", but none explicitly get "Dueling".
-*/
-const groupByClasses = () => {
-
-	// Create another function to be returned.
-	const reducer = (featuresPerClass, feature) => {
-
-		// Loop through each class within each feature.
-		const classNames = Object.keys(feature['classes'] || {})
-		for (const className of classNames) {
-
-			// It's better to ask for forgiveness than to ask for permission.
-			try {
-
-				// This is featured in our class if a progression row has a "Feature" keyword.
-				if (feature['classes'][className]['progression'].some(row => 'Feature' in row)) {
-
-					// Make this classes' entry if it doesn't yet exist.
-					if (!(className in featuresPerClass)) {
-						featuresPerClass[className] = []
-					}
-
-					// Add the feature to the entry.
-					featuresPerClass[className].push(feature)
-				}
-			}
-
-			// If there is some error, its because the expected keys or values didn't exist.
-			catch {
-				continue
-			}
-		}
-
-		// Pass over the manipulated object to the next item in the reducer chain.
-		return featuresPerClass
-	}
-
-	// Return the new reducer function.
-	return reducer
-}
-
-
-/*
-While this isn't itself a reducer, it returns a reducer function (like the others here).
-This just creates an object from an array of features, with keys being feature names.
-The function is needed to objectify the original array of features for easy-access.
-*/
-const groupByName = () => {
-
-	// Create another function to be returned.
-	const reducer = (featuresByName, feature) => {
-
-		// The slug is required, so it must exist in all features.
-		const slug = feature['slug']
-
-		// This slug really shouldn't exist in the dictionary yet.
-		if (slug in featuresByName) {
-			throw new Error('Feature name collision detected.')
-		}
-
-		// Add the feature to the object with this slug and pass it over.
-		featuresByName[slug] = feature
-		return featuresByName
-	}
-
-	// Return the new reducer function.
-	return reducer
-}
-
-
-/*
 While this isn't itself a mapper, it returns a mapper function.
 This mapper returns a series of progression arrays with all implied entries filled in.
 It doesn't track feature names, but it doesn't have to either.
@@ -232,6 +128,110 @@ const fillProgression = (className, levelOffset = 0, levelMaximum = 20) => {
 
 	// Return the new mapper function.
 	return mapper
+}
+
+
+/*
+While this isn't itself a filterer, it returns a filterer function.
+This inception is done to allow additional parameters to be passed in.
+As other functions here, this is to be used with arrays of features.
+*/
+const filterByClass = (className) => {
+
+	// We have a class name, and can use it to create a function without it as a parameter.
+	const filterer = (feature) => {
+
+		// It's better to ask for forgiveness than to ask for permission.
+		try {
+
+			// This is featured in our class only if a progression row has a "Feature" keyword.
+			return feature['classes'][className]['progression'] !== undefined
+		}
+
+		// If there is some error, its because the expected keys or values didn't exist.
+		catch {
+			return false
+		}
+	}
+
+	// Return a function.
+	return filterer
+}
+
+
+/*
+While this isn't itself a reducer, it returns a reducer function (like the others here).
+This inception is done to be consistent with helpers that need additional parameters.
+To get an easy-to-access dictionary of features, this can be called upon in arrays.
+---
+Note that a single feature can be slotted for zero or many classes.
+For example, a few classes get "Expertise", but none explicitly get "Dueling".
+*/
+const groupByClasses = () => {
+
+	// Create another function to be returned.
+	const reducer = (featuresPerClass, feature) => {
+
+		// Loop through each class within each feature.
+		const classNames = Object.keys(feature['classes'] || {})
+		for (const className of classNames) {
+
+			// It's better to ask for forgiveness than to ask for permission.
+			try {
+
+				// This is featured in our class if a progression row has a "Feature" keyword.
+				if (feature['classes'][className]['progression'].some(row => 'Feature' in row)) {
+
+					// Make this classes' entry if it doesn't yet exist.
+					if (!(className in featuresPerClass)) {
+						featuresPerClass[className] = []
+					}
+
+					// Add the feature to the entry.
+					featuresPerClass[className].push(feature)
+				}
+			}
+
+			// If there is some error, its because the expected keys or values didn't exist.
+			catch {
+				continue
+			}
+		}
+
+		// Pass over the manipulated object to the next item in the reducer chain.
+		return featuresPerClass
+	}
+
+	// Return the new reducer function.
+	return reducer
+}
+
+
+/*
+While this isn't itself a reducer, it returns a reducer function (like the others here).
+This just creates an object from an array of features, with keys being feature names.
+The function is needed to objectify the original array of features for easy-access.
+*/
+const groupByName = () => {
+
+	// Create another function to be returned.
+	const reducer = (featuresByName, feature) => {
+
+		// The slug is required, so it must exist in all features.
+		const slug = feature['slug']
+
+		// This slug really shouldn't exist in the dictionary yet.
+		if (slug in featuresByName) {
+			throw new Error('Feature name collision detected.')
+		}
+
+		// Add the feature to the object with this slug and pass it over.
+		featuresByName[slug] = feature
+		return featuresByName
+	}
+
+	// Return the new reducer function.
+	return reducer
 }
 
 
