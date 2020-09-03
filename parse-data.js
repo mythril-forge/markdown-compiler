@@ -1,5 +1,5 @@
 /*
-While this isn't itself a mapper, it returns a mapper function.
+While this isn't itself a mapper, it returns a mapper function for features.
 This mapper returns a series of progression arrays with all implied entries filled in.
 It doesn't track feature names, but it doesn't have to either.
 */
@@ -235,23 +235,32 @@ const groupByName = () => {
 }
 
 
+/*
+This reducer factory, interestingly, is placed on arrays of progression arrays.
+The reducer combines one or more progression arrays into a single progression.
+In other words, it squishes the features down into a single table.
+*/
 const mergeProgression = () => {
 
 	// Create another function to be returned.
 	const reducer = (progressionFull, progressionData) => {
 
+		// Loop through each row & column of this progression.
 		for (const dataRow of progressionData) {
 
+			// Ensure that the level exists for a row in this progression.
+			// Luckily, its easy if it does not -- just copy this data row!
 			const hasLevel = progressionFull.some((fullRow) => {
 				return fullRow['Level'] === dataRow['Level']
 			})
-
 			if (hasLevel) {
+
 				// Find the full row entry whose level matches.
 				const fullRow = progressionFull.find((fullRow) => {
 					return fullRow['Level'] === dataRow['Level']
 				})
 
+				// Loop through each row & column of this progression set.
 				const dataCells = Object.entries(dataRow)
 				for (const [column, data] of dataCells) {
 
@@ -260,15 +269,18 @@ const mergeProgression = () => {
 						fullRow[column] = data
 					}
 
+					// The "Level" column will already exist.
 					else if (column === 'Level') {
 						continue
 					}
 
+					// The "Features" array just requires pushed data.
 					else if (column === 'Features') {
 						// Add data to the fullRow's "Features" array.
 						fullRow['Features'].push(...data)
 					}
 
+					// Spell slots are special; they contain subcolumns and numerical data.
 					else if (column === 'Spell Slots per Slot Level') {
 						// Loop through every subcolumn and update.
 						const subdataCells = Object.entries(data)
@@ -281,17 +293,25 @@ const mergeProgression = () => {
 							}
 						}
 					}
+
 					else {
+						// All other cases called are cause for error.
 						console.error('Collision detected:', column)
 					}
 				}
 			}
+
 			else {
+				// This just pushes a new dataRow if no fullRow exists of a certain level.
 				progressionFull.push(dataRow)
 			}
 		}
+
+		// Snowball the progression object over to the next chain item.
 		return progressionFull
 	}
+
+	// Return the new reducer function.
 	return reducer
 }
 
