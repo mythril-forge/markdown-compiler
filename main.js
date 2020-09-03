@@ -5,8 +5,8 @@ import {
 	groupByName,
 	filterByClass,
 	fillProgression,
+	mergeProgression,
 } from './parse-data.js'
-
 
 const main = async () => {
 	// Obtain all features, ever.
@@ -20,32 +20,15 @@ const main = async () => {
 	// Categorized class features.
 	const featuresByClass = features.reduce(groupByClasses(), {})
 	const featuresByName = features.reduce(groupByName(), {})
+
+	// Dictate an arbitrary class to look up. Then, look it up.
 	const className = 'cleric'
 	const featuresForClass = features.filter(filterByClass(className))
 
-	// Create a useful progression table index for classes.
-	const featureProgression = features.reduce(fillProgression(className), [
-		{Level: 1, Features: []},
-		{Level: 2, Features: []},
-		{Level: 3, Features: []},
-		{Level: 4, Features: []},
-		{Level: 5, Features: []},
-		{Level: 6, Features: []},
-		{Level: 7, Features: []},
-		{Level: 8, Features: []},
-		{Level: 9, Features: []},
-		{Level: 10, Features: []},
-		{Level: 11, Features: []},
-		{Level: 12, Features: []},
-		{Level: 13, Features: []},
-		{Level: 14, Features: []},
-		{Level: 15, Features: []},
-		{Level: 16, Features: []},
-		{Level: 17, Features: []},
-		{Level: 18, Features: []},
-		{Level: 19, Features: []},
-		{Level: 20, Features: []},
-	])
+	// Create a useful progression table index for this class.
+	const clericProgression = features.filter(filterByClass('cleric')).map(fillProgression('cleric', 0, 4))
+	const wizardProgression = features.filter(filterByClass('wizard')).map(fillProgression('wizard', 4, 20))
+	const progressionTable = [...wizardProgression, ...clericProgression].reduce(mergeProgression())
 
 	// Create a summary for all the classes.
 
@@ -58,7 +41,7 @@ const main = async () => {
 	console.info('grouped:')
 	console.dir(featuresForClass)
 	console.info('progression:')
-	console.dir(featureProgression)
+	console.dir(progressionTable)
 }
 
 document.getElementById('fetch-button').addEventListener('click', main)
