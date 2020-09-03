@@ -235,9 +235,71 @@ const fillProgression = (className, levelOffset = 0, levelMaximum = 20) => {
 }
 
 
+const mergeProgression = () => {
+
+	// Create another function to be returned.
+	const reducer = (progressionFull, progressionData) => {
+
+		for (const dataRow of progressionData) {
+
+			const hasLevel = progressionFull.some((fullRow) => {
+				return fullRow['Level'] === dataRow['Level']
+			})
+
+			if (hasLevel) {
+				// Find the full row entry whose level matches.
+				const fullRow = progressionFull.find((fullRow) => {
+					return fullRow['Level'] === dataRow['Level']
+				})
+
+				const dataCells = Object.entries(dataRow)
+				for (const [column, data] of dataCells) {
+
+					// If the column hasn't been added, just copy the data.
+					if (!(column in fullRow)) {
+						fullRow[column] = data
+					}
+
+					else if (column === 'Level') {
+						continue
+					}
+
+					else if (column === 'Features') {
+						// Add data to the fullRow's "Features" array.
+						fullRow['Features'].push(...data)
+					}
+
+					else if (column === 'Spell Slots per Slot Level') {
+						// Loop through every subcolumn and update.
+						const subdataCells = Object.entries(data)
+						for (const [subcolumn, subdata] of subdataCells) {
+							if (!(subcolumn in fullRow[column])) {
+								fullRow[column][subcolumn] = subdata
+							}
+							else {
+								fullRow[column][subcolumn] += subdata
+							}
+						}
+					}
+					else {
+						throw new Error('Collision detected!')
+					}
+				}
+			}
+			else {
+				progressionFull.push(dataRow)
+			}
+		}
+		return progressionFull
+	}
+	return reducer
+}
+
+
 export {
 	filterByClass,
 	groupByClasses,
 	groupByName,
 	fillProgression,
+	mergeProgression,
 }
