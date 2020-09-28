@@ -49,14 +49,14 @@ const generateSummaryTable = (progression) => {
 	const columns = []
 	const groupedColumns = {}
 	let markdown = ''
-	progression.sort((a, b) => {
-		if (a === b) {
+	progression.sort((row01, row02) => {
+		if (row01 === row02) {
 			return 0
 		}
-		else if (a.Level > b.Level) {
+		else if (row01.Level > row02.Level) {
 			return 1
 		}
-		else if (a.Level < b.Level) {
+		else if (row01.Level < row02.Level) {
 			return -1
 		}
 		else {

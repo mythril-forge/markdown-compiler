@@ -64,12 +64,12 @@ const prepareDescription = (template, feature, className) => {
 	// Obtain a shorthand for the progression table.
 	const progression = feature['classes'][className]['progression'] || []
 	// The progression table may not be sorted. Sort it!
-	progression.sort((rowA, rowB) => {
-		if (rowA === rowB) {
+	progression.sort((row01, row02) => {
+		if (row01 === row02) {
 			return 0
-		} else if (rowA['Level'] > rowB['Level']) {
+		} else if (row01['Level'] > row02['Level']) {
 			return 1
-		} else if (rowA['Level'] < rowB['Level']) {
+		} else if (row01['Level'] < row02['Level']) {
 			return -1
 		} else {
 			return 0
