@@ -144,7 +144,7 @@ const filterByClass = (className) => {
 		// It's better to ask for forgiveness than to ask for permission.
 		try {
 
-			// This is featured in our class only if a progression row has a "Feature" keyword.
+			// This is featured in our class only if it has a progression.
 			return feature['classes'][className]['progression'] !== undefined
 		}
 
@@ -179,8 +179,8 @@ const groupByClasses = () => {
 			// It's better to ask for forgiveness than to ask for permission.
 			try {
 
-				// This is featured in our class if a progression row has a "Feature" keyword.
-				if (feature['classes'][className]['progression'].some(row => 'Feature' in row)) {
+				// This is featured in our class only if it has a progression.
+				if (feature['classes'][className]['progression'] !== undefined) {
 
 					// Make this classes' entry if it doesn't yet exist.
 					if (!(className in featuresPerClass)) {

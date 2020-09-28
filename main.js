@@ -1,8 +1,8 @@
 import {requestFeatureData} from './request-data.graphql.js'
 import {prepareFeatureData} from './prepare-data.js'
 import {
-	groupByClasses,
 	groupByName,
+	groupByClasses,
 	filterByClass,
 	fillProgression,
 	mergeProgression,
@@ -18,16 +18,16 @@ const main = async () => {
 	// const classes = prepareClassData(classData)
 
 	// Categorized class features.
-	const featuresByClass = features.reduce(groupByClasses(), {})
 	const featuresByName = features.reduce(groupByName(), {})
-
-	// Dictate an arbitrary class to look up. Then, look it up.
-	const className = 'cleric'
-	const featuresForClass = features.filter(filterByClass(className))
+	const featuresByClass = features.reduce(groupByClasses(), {})
 
 	// Create a useful progression table index for this class.
-	const clericProgression = features.filter(filterByClass('cleric')).map(fillProgression('cleric', 0, 4))
-	const wizardProgression = features.filter(filterByClass('wizard')).map(fillProgression('wizard', 4, 20))
+	const clericProgression = featuresByClass['cleric']
+	.map(fillProgression('cleric', 0, 5))
+
+	const wizardProgression = featuresByClass['wizard']
+	.map(fillProgression('wizard', 5, 20))
+
 	const progressionTable = [...wizardProgression, ...clericProgression].reduce(mergeProgression())
 
 	// Create a summary for all the classes.
@@ -38,8 +38,6 @@ const main = async () => {
 	console.info('features:')
 	console.dir(features)
 	console.dir(featuresByName)
-	console.info('grouped:')
-	console.dir(featuresForClass)
 	console.info('progression:')
 	console.dir(progressionTable)
 }
