@@ -160,20 +160,38 @@ const summarize = (features, className) => {
 	// Make an array of features.
 	let features = Object.values(features)
 	// Sort them nicely.
-	features.sort((a, b) => {:
+	features.sort((a, b) => {
 		const feature = (f) => f['classes'][className]['progression'][0]['Feature']||''
-		if (a === b) {return 0} // ! strange braces for git diff ! //
+		if (a === b) {
+			return 0
+		}
 		else {
-			if (feature(a) > feature(b)) {return 1} // ! strange braces for git diff ! //
-			else if (feature(a) < feature(b)) {return -1} // ! strange braces for git diff ! //
-			else {return 0}}}) // ! strange braces for git diff ! //
+			if (feature(a) > feature(b)) {
+				return 1
+			}
+			else if (feature(a) < feature(b)) {
+				return -1
+			}
+			else {
+				return 0
+			}
+		}
+	})
 	features.sort((a, b) => {
 		const feature = (f) => f['classes'][className]['progression'][0]['Level']||Infinity
-		if (a === b) {return 0} // ! strange braces for git diff ! //
+		if (a === b) {
+			return 0
+		}
 		else {
 			if (feature(a) > feature(b)) {return 1} // ! strange braces for git diff ! //
-			else if (feature(a) < feature(b)) {return -1} // ! strange braces for git diff ! //
-			else {return 0}}}) // ! strange braces for git diff ! //
+			else if (feature(a) < feature(b)) {
+				return -1
+			}
+			else {
+				return 0
+			}
+		}
+	})
 
 	// If the feature is not in the table,
 	// then it doesn't get described independently.
