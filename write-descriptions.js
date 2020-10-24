@@ -47,8 +47,10 @@ const generateSummaries = (
 
 const generateSummaryTable = (progression) => {
 	const columns = []
-	const groupedColumns = {}
-	let markdown = ''
+	const subcolumns = {}
+	let table = ''
+
+	// Sorting might not be necessary, but its a safe bet.
 	progression.sort((row01, row02) => {
 		if (row01 === row02) {
 			return 0
@@ -64,74 +66,114 @@ const generateSummaryTable = (progression) => {
 		}
 	})
 
+	// The first step in this process after sorting is know all the columns.
+	// And subcolumns, for that matter. This takes looping over the data.
+
+	// Loop through each of the sorted progression rows.
 	for (const row of progression) {
-		for (const column of row) {
-			if (!(column in columns)) {
+
+		// Loop through each of the column-keys in the row.
+		for (const column in row) {
+			if (!(columns.includes(column))) {
 				columns.push(column)
 			}
+
+			// If the column contains another dictionary, then it has subcolumns.
+			// It has to be an Object but not an Array for this to be the case.
 			if ((row[column] instanceof Object) && !(row[column] instanceof Array)) {
-				if (!(column in groupedColumns)) {
-					groupedColumns[column] = []
+				if (!(column in subcolumns)) {
+					subcolumns[column] = []
 				}
-				for (const [subcolumn, entry] of Object.entries(row[column])) {
-					if (!groupedColumns[column].includes(subcolumn)) {
-						groupedColumns[column].push(subcolumn)
+
+				// Loop through each subcolumn.
+				// Every subcolumn must be represented for the column.
+				for (const subcolumn of Object.keys(row[column])) {
+					if (!subcolumns[column].includes(subcolumn)) {
+						subcolumns[column].push(subcolumn)
 					}
 				}
 			}
 		}
 	}
 
-	markdown += '<table>\n\t<thead>\n\t\t<tr>'
+	// Create table container, table head, and first table row.
+	table += '<table>\n\t<thead>\n\t\t<tr>'
+
+	// Now, loop through all the table columns.
 	for (const column of columns) {
+
+		// Make sure the cell is the right size in HTML.
+		// Use row span and column span to track this.
 		let rowSpan
-		let columnSpan
-		if (column in groupedColumns) {
-			columnSpan = groupedColumns[column].length
+		let colSpan
+		if (column in subcolumns) {
+			colSpan = subcolumns[column].length
 			rowSpan = 1
 		}
 		else {
-			columnSpan = 1
+			colSpan = 1
 			rowSpan = 2
 		}
-		markdown += '\n\t\t\t<th '
-		markdown += `colspan='${columnSpan}' `
-		markdown += `rowspan='${rowSpan}'>`
-		markdown += column
-		markdown += '</th>'
-	}
-	markdown += '\n\t\t</tr>'
 
-	if (groupedColumns.length > 0) {
-		markdown += '\n\t\t<tr>'
+		// Add this table header item, with attributes.
+		table += '\n\t\t\t<th '
+		table += `colspan='${colSpan}' `
+		table += `rowspan='${rowSpan}'>`
+		table += column
+		table += '</th>'
+	}
+	// Complete first header row.
+	table += '\n\t\t</tr>'
+
+	// There can be more than one header row...
+	// This only happens when there are subcolumns somewhere.
+	if (Object.keys(subcolumns).length > 0) {
+		table += '\n\t\t<tr>'
+
+		// Scan each column to see if its a subcolumn.
 		for (const column of columns) {
-			for (const subcolumn of groupedColumns[column]??{}) {
-				markdown += '\n\t\t\t<th '
-				markdown += 'colspan=\'1\' '
-				markdown += 'rowspan=\'1\'>'
-				markdown += subcolumn
-				markdown += '\n\t\t\t</th>'
+			if (column in subcolumns) {
+
+				// Add subcolumns underneath this column!
+				for (const subcolumn of subcolumns[column]) {
+					table += '\n\t\t\t<th '
+					table += 'colspan=\'1\' '
+					table += 'rowspan=\'1\'>'
+					table += subcolumn
+					table += '</th>'
+				}
 			}
 		}
-		markdown += '\n\t\t</tr>'
+		table += '\n\t\t</tr>'
 	}
-	markdown += '\n\t<tbody>'
 
+	// End the table head, and start the body.
+	table += '\n\t</thead>\n\t<tbody>'
+
+	// Loop through each of the data-rows of the progression.
 	for (const row of progression) {
-		markdown += '\n\t\t<tr>'
+		table += '\n\t\t<tr>'
 		const entries = []
+
+		// Loop through each of the columns of the row.
 		for (let [column, entry] of Object.entries(row)) {
+
+			// Check of the column happens to be a subcolumn.
 			if ((entry instanceof Object) && !(entry instanceof Array)) {
 				let flag = false
-				for (let item of entry) {
+				console.warn(entry)
+				for (let item of Object.values(entry)) {
+					console.log(item)
 					flag = true
 					if (item === null) {item = '&mdash;'}
-					markdown += `\n\t\t\t<td>${item}</td>`
+					table += `\n\t\t\t<td>${item}</td>`
 				}
 				if (!flag) {
-					markdown += '\n\t\t\t<td>&mdash;</td>'
+					table += '\n\t\t\t<td>&mdash;</td>'
 				}
 			}
+
+			// Its not a subcolumn. Just enter the data entry.
 			else {
 				if (entry instanceof Array) {
 					entry = entry.join(', ')
@@ -141,17 +183,19 @@ const generateSummaryTable = (progression) => {
 					entry = ordinal(entry)
 				}
 
-				else (entry === null) {entry = '&mdash;'}
-				markdown += `\n\t\t\t<td>${entry}</td>`
+				else if (entry === null) {entry = '&mdash;'}
+				table += `\n\t\t\t<td>${entry}</td>`
 			}
 		}
 
-		markdown += '\n\t\t</tr>'
+		// Close the table row.
+		table += '\n\t\t</tr>'
 	}
-	markdown += '\n\t</tbody>'
-	markdown += '\n</table>\n'
 
-	return markdown
+	// Close the table body, table, and return.
+	table += '\n\t</tbody>'
+	table += '\n</table>\n'
+	return table
 }
 
 
