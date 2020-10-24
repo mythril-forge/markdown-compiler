@@ -1,8 +1,8 @@
 import {RegExX} from './reg-exx.js'
-import {alphabet} from './helpers'
+// import {alphabet} from './helpers'
 
 
-
+/* DEPRECATED SUMMARY GENERATOR **********************************************************
 const generateSummaries = (
 	classFeatures,
 	classProgressions,
@@ -42,7 +42,7 @@ const generateSummaries = (
 	}
 	return results
 }
-
+*****************************************************************************************/
 
 
 const generateSummaryTable = (progression) => {
@@ -155,7 +155,7 @@ const generateSummaryTable = (progression) => {
 }
 
 
-
+/* DEPRECATED DESCRIPTION GENERATORS *****************************************************
 const summarize = (features, className) => {
 	// Make an array of features.
 	let features = Object.values(features)
@@ -359,6 +359,6 @@ ${listings['Multiclassing']}
 `
 	return markdown
 }
+*****************************************************************************************/
 
-
-export {}
+export {generateSummaryTable}
