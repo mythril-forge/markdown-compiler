@@ -105,7 +105,7 @@ const generateSummaryTable = (progression) => {
 	if (groupedColumns.length > 0) {
 		markdown += '\n\t\t<tr>'
 		for (const column of columns) {
-			for (const subcolumn of groupedColumns[column]||{}) {
+			for (const subcolumn of groupedColumns[column]??{}) {
 				markdown += '\n\t\t\t<th '
 				markdown += 'colspan=\'1\' '
 				markdown += 'rowspan=\'1\'>'
@@ -161,7 +161,7 @@ const summarize = (features, className) => {
 	let features = Object.values(features)
 	// Sort them nicely.
 	features.sort((a, b) => {
-		const feature = (f) => f['classes'][className]['progression'][0]['Feature']||''
+		const feature = (f) => f['classes'][className]['progression'][0]['Feature']??''
 		if (a === b) {
 			return 0
 		}
@@ -178,12 +178,14 @@ const summarize = (features, className) => {
 		}
 	})
 	features.sort((a, b) => {
-		const feature = (f) => f['classes'][className]['progression'][0]['Level']||Infinity
+		const feature = (f) => f['classes'][className]['progression'][0]['Level']??Infinity
 		if (a === b) {
 			return 0
 		}
 		else {
-			if (feature(a) > feature(b)) {return 1} // ! strange braces for git diff ! //
+			if (feature(a) > feature(b)) {
+				return 1
+			}
 			else if (feature(a) < feature(b)) {
 				return -1
 			}
