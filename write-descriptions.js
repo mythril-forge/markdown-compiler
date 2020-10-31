@@ -150,7 +150,9 @@ const generateSummaryTable = (progression) => {
 	})
 
 	// Create table container, table head, and first table row.
-	table += '<table>\n\t<thead>\n\t\t<tr>'
+	table += '<table>'
+	table += '\n\t<caption>Progression Table</caption>'
+	table += '\n\t<thead>\n\t\t<tr>'
 
 	// Now, loop through all the table columns.
 	for (const column of columns) {
@@ -247,7 +249,6 @@ const generateSummaryTable = (progression) => {
 
 	// Close the table body, table, and return.
 	table += '\n\t</tbody>'
-	table += '\n\t<caption>Progression Table</caption>'
 	table += '\n</table>\n'
 	return table
 }
