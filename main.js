@@ -41,8 +41,8 @@ const main = async () => {
 	// Classes and features are respectively returned
 	// once they are digested by this file
 
-	console.info('progression summary table:')
-	console.log(summaryTable)
+	document.getElementById('character-data').innerHTML = summaryTable
+
 	console.info('features:')
 	console.dir(features)
 	console.dir(featuresByName)
