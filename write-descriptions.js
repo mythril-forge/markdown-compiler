@@ -96,8 +96,63 @@ const generateSummaryTable = (progression) => {
 		}
 	}
 
+	// Sort the order of columns with a custom sort.
+	columns.sort((column01, column02) => {
+
+		// There are two levels of sorting.
+		// The most important is the priority of the column.
+		// Level & Feature columns always are placed first.
+		// Spells Ready and Spell Slots per Slot Level are last.
+		const getPriority = (column) => {
+			if (column === "Level") {
+				return 0
+			}
+			else if (column === "Features") {
+				return 1
+			}
+			else if (column.includes(' Spells', column.length - 7)) {
+				return 3
+			}
+			else if (column === "Spell Slots per Slot Level") {
+				return 4
+			}
+			else {
+				return 2
+			}
+		}
+
+		let priority01 = getPriority(column01)
+		let priority02 = getPriority(column02)
+
+		if (priority01 === priority02) {
+			if (column01 === column02) {
+				return 0
+			}
+			else if (column01 > column02) {
+				return 1
+			}
+			else if (column01 < column02) {
+				return -1
+			}
+			else {
+				return 0
+			}
+		}
+		else if (priority01 > priority02) {
+			return 1
+		}
+		else if (priority01 < priority02) {
+			return -1
+		}
+		else {
+			return 0
+		}
+	})
+
 	// Create table container, table head, and first table row.
-	table += '<table>\n\t<thead>\n\t\t<tr>'
+	table += '<table>'
+	table += '\n\t<caption>Progression Table</caption>'
+	table += '\n\t<thead>\n\t\t<tr>'
 
 	// Now, loop through all the table columns.
 	for (const column of columns) {
@@ -156,14 +211,14 @@ const generateSummaryTable = (progression) => {
 		const entries = []
 
 		// Loop through each of the columns of the row.
-		for (let [column, entry] of Object.entries(row)) {
+		// Do so in-order by the arbitrary sorter above.
+		for (const column of columns) {
+			let entry = row[column]
 
 			// Check of the column happens to be a subcolumn.
 			if ((entry instanceof Object) && !(entry instanceof Array)) {
 				let flag = false
-				console.warn(entry)
 				for (let item of Object.values(entry)) {
-					console.log(item)
 					flag = true
 					if (item === null) {item = '&mdash;'}
 					table += `\n\t\t\t<td>${item}</td>`

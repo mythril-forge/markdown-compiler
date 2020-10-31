@@ -19,8 +19,11 @@ const main = async () => {
 	// const classes = prepareClassData(classData)
 
 	// Categorized class features.
-	const featuresByName = features.reduce(groupByName(), {})
-	const featuresByClass = features.reduce(groupByClasses(), {})
+	const featuresByName = features
+	.reduce(groupByName(), {})
+
+	const featuresByClass = features
+	.reduce(groupByClasses(), {})
 
 	// Create a useful progression table index for this class.
 	const clericProgression = featuresByClass['cleric']
@@ -38,8 +41,8 @@ const main = async () => {
 	// Classes and features are respectively returned
 	// once they are digested by this file
 
-	console.info('progression summary table:')
-	console.log(summaryTable)
+	document.getElementById('character-data').innerHTML = summaryTable
+
 	console.info('features:')
 	console.dir(features)
 	console.dir(featuresByName)
