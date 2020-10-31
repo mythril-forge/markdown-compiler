@@ -247,6 +247,7 @@ const generateSummaryTable = (progression) => {
 
 	// Close the table body, table, and return.
 	table += '\n\t</tbody>'
+	table += '\n\t<caption>Progression Table</caption>'
 	table += '\n</table>\n'
 	return table
 }
