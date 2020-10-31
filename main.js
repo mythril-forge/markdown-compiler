@@ -19,8 +19,11 @@ const main = async () => {
 	// const classes = prepareClassData(classData)
 
 	// Categorized class features.
-	const featuresByName = features.reduce(groupByName(), {})
-	const featuresByClass = features.reduce(groupByClasses(), {})
+	const featuresByName = features
+	.reduce(groupByName(), {})
+
+	const featuresByClass = features
+	.reduce(groupByClasses(), {})
 
 	// Create a useful progression table index for this class.
 	const clericProgression = featuresByClass['cleric']
