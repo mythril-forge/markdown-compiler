@@ -2,11 +2,12 @@ import {RegExX} from './reg-exx.js'
 // import {alphabet} from './helpers'
 
 
-/* DEPRECATED DESCRIPTION GENERATORS *****************************************************
-const summarize = (features, className) => {
-	// Make an array of features.
-	let features = Object.values(features)
+const generateDescriptions = (progression, className, featuresByClass, featuresByName) => {
+	// Get an array of features.
+	let features = featuresByClass[className]
+
 	// Sort them nicely.
+	// First, sort by their un-slugged name.
 	features.sort((a, b) => {
 		const feature = (f) => f['classes'][className]['progression'][0]['Feature']??''
 		if (a === b) {
@@ -24,6 +25,8 @@ const summarize = (features, className) => {
 			}
 		}
 	})
+
+	// Next, sort by their level.
 	features.sort((a, b) => {
 		const feature = (f) => f['classes'][className]['progression'][0]['Level']??Infinity
 		if (a === b) {
@@ -57,17 +60,35 @@ const summarize = (features, className) => {
 	}
 	features = features.filter(filterer)
 
-	// Add every feature to the markdown.
-	let markdown = ''
-	for (const feature of features) {
-		markdown += feature['classes'][className]['description']
-		markdown += '\n'
+	// Add every feature to the description.
+	let description = ''
+
+	// Recursively add every feature's children too.
+	const writeFeature = (feature) => {
+		let featureDesc = ''
+		if ('classes' in feature) {
+			featureDesc += feature['classes'][className]['markdown']
+			featureDesc += '\n'
+			if ('children' in feature['classes'][className]) {
+				for (let child of feature['classes'][className]['children']) {
+					child = featuresByName[child]
+					featureDesc += writeFeature(child)
+				}
+			}
+		}
+		return featureDesc
 	}
-	return markdown
+
+	// Here's your expected features loop.
+	for (const feature of features) {
+		description += writeFeature(feature)
+	}
+	console.log(description)
+	return description
 }
 
 
-
+/* DEPRECATED DESCRIPTION GENERATORS *****************************************************
 const explainClassData = (classData, className) => {
 	// this groups object holds various bullet-lists.
 	// it will be combined later into the markdown.
@@ -416,4 +437,7 @@ const generateSummaryTable = (progression) => {
 	return table
 }
 
-export {generateSummaryTable}
+export {
+	generateDescriptions,
+	generateSummaryTable,
+}
