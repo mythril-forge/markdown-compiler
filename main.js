@@ -7,7 +7,10 @@ import {
 	fillProgression,
 	mergeProgression,
 } from './parse-data.js'
-import {generateSummaryTable} from './write-descriptions.js'
+import {
+	generateSummaryTable,
+	generateDescriptions,
+} from './write-descriptions.js'
 
 const main = async () => {
 	// Obtain all features, ever.
@@ -35,17 +38,18 @@ const main = async () => {
 	const fullProgression = [...wizardProgression, ...clericProgression]
 	.reduce(mergeProgression())
 
+	// Obtain the template element.
+	const templateEl = document.getElementById('character-data')
+
 	// Create a summary for all the classes in this progression.
 	const summaryTable = generateSummaryTable(fullProgression)
+	templateEl.innerHTML = summaryTable
 
 	// Classes and features are respectively returned
-	// once they are digested by this file
+	// once they are digested by this file.
+	templateEl.innerHTML += generateDescriptions(clericProgression, 'cleric', featuresByClass, featuresByName)
+	templateEl.innerHTML += generateDescriptions(wizardProgression, 'wizard', featuresByClass, featuresByName)
 
-	document.getElementById('character-data').innerHTML = summaryTable
-
-	console.info('features:')
-	console.dir(features)
-	console.dir(featuresByName)
 	console.info('progression:')
 	console.dir(fullProgression)
 }
