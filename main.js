@@ -1,5 +1,7 @@
-import {requestFeatureData} from './request-data.graphql.js'
-import {prepareFeatureData} from './prepare-data.js'
+import {requestClassData, requestFeatureData} from './request-data.graphql.js'
+
+import {prepareClassData, prepareFeatureData} from './prepare-data.js'
+
 import {
 	groupByName,
 	groupByClasses,
@@ -7,20 +9,39 @@ import {
 	fillProgression,
 	mergeProgression,
 } from './parse-data.js'
+
 import {
 	generateSummaryTable,
 	generateDescriptions,
 } from './write-descriptions.js'
 
-const main = async () => {
-	// Obtain all features, ever.
-	const featurePromise = requestFeatureData()
-	// const classPromise = requestClassData()
-	const featureData = await featurePromise
-	// const classData = await classPromise
-	const features = prepareFeatureData(featureData)
-	// const classes = prepareClassData(classData)
+let features = null
+let classes = null
 
+const fetchData = async () => {
+	// Obtain all classes & features, ever.
+	const featurePromise = requestFeatureData()
+	const classPromise = requestClassData()
+
+	// Await for all of those details.
+	const featureData = await featurePromise
+	const classData = await classPromise
+
+	// Digest those data into more useable objects.
+	features ??= prepareFeatureData(featureData)
+	classes ??= prepareClassData(classData)
+}
+
+const hookFetchData = async () => {
+	await fetchData()
+	// Obtain option-group item
+	for (const classItem of classes) {
+		console.log(classItem['slug'])
+		console.dir(classItem)
+	}
+
+	/* EXPERIMENTATION BELOW */
+	/***************************************************************************************
 	// Categorized class features.
 	const featuresByName = features
 	.reduce(groupByName(), {})
@@ -52,6 +73,9 @@ const main = async () => {
 
 	console.info('progression:')
 	console.dir(fullProgression)
+	***************************************************************************************/
 }
 
-document.getElementById('fetch-button').addEventListener('click', main)
+document
+.getElementById('fetch-button')
+.addEventListener('click', hookFetchData)
