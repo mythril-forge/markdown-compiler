@@ -11,6 +11,7 @@ import {
 	branch,
 	version,
 } from './variables.js'
+
 /*
 This file, and its functions, are the root of the entire dataset.
 Every funciton preseented here stems from this dataset.
@@ -35,7 +36,19 @@ const query = `
 query GetFiles {
 	organization(login: "${account}") {
 		repository(name: "${project}") {
-			object(expression: "${branch}:source/${version}/abilities/features") {
+			classes: object(expression: "${branch}:source/${version}/vocations/classes") {
+				... on Tree {
+					entries {
+						name
+						object {
+							... on Blob {
+								text
+							}
+						}
+					}
+				}
+			}
+			features: object(expression: "${branch}:source/${version}/abilities/features") {
 				... on Tree {
 					entries {
 						name
@@ -53,15 +66,39 @@ query GetFiles {
 `
 
 /* CREATE THE DATA COLLECTOR */
-// Create an async function to make the request.
-const requestFeatureData = async () => {
-	// The request is made when fetch is called.
-	const response = graphql(query, initOptions)
-	const data = await response
-	const entries = data.organization.repository.object.entries
+// This response immediately prepped and requested once.
+// It should be either pending or done each time its called.
+let response = null
 
-	// The resulting object is over-structured for my purpose, so I'm flattening it a bit.
-	// Loop through all the entries to consolidate the data.
+// Create async functions to make the request.
+// Once the GraphQL response is processed they wont need to await.
+
+const requestClassData = async () => {
+	// Obtain response data from the GraphQL request.
+	response ??=  graphql(query, initOptions)
+	const data = await response
+
+	// Select specific classes property, process, and return.
+	const entries = data['organization']['repository']['classes']['entries']
+	return processData(entries)
+}
+
+const requestFeatureData = async () => {
+	// Obtain response data from the GraphQL request.
+	response ??=  graphql(query, initOptions)
+	const data = await response
+
+	// Select specific classes property, process, and return.
+	const entries = data['organization']['repository']['features']['entries']
+	return processData(entries)
+}
+
+// Whatever use the response has, the data is over-structured.
+// It needs to be flattened for the purposes of this app.
+
+const processData = (entries) => {
+	// The entries object is over-structured and needs flattened.
+	// Create a new object and populate it with flat data.
 	const files = {}
 	for (const entry of entries) {
 		const entryName = entry.name
@@ -74,8 +111,11 @@ const requestFeatureData = async () => {
 		}
 	}
 
-	// Return the files in a Promise.
+	// Return the flattened files.
 	return files
 }
 
-export {requestFeatureData}
+export {
+	requestClassData,
+	requestFeatureData,
+}
