@@ -11,8 +11,20 @@
 
 		<form>
 			<fieldset>
-				<legend for='fetch-button'>Activate Fetch</legend>
-				<input type='button' id='fetch-button' value='Fetch Character Data' />
+				<legend>Activate Fetch</legend>
+
+				<div id='fetch-character-data'>
+					<input
+						type='button'
+						value='Fetch Character Data'
+					/>
+				</div>
+
+				<div id='class-selection' hidden>
+					<label>Class Selection</label>
+					<select multiple></select>
+				</div>
+
 			</fieldset>
 		</form>
 

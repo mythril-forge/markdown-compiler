@@ -33,12 +33,31 @@ const fetchData = async () => {
 }
 
 const hookFetchData = async () => {
+	// Disable the button first and foremost
+	document
+	.querySelector('#fetch-character-data input')
+	.setAttribute('disabled', true)
+
 	await fetchData()
-	// Obtain option-group item
+	let selectionHTML = ''
+
+	// Obtain option-group items.
 	for (const classItem of classes) {
 		console.log(classItem['slug'])
-		console.dir(classItem)
+		selectionHTML += '\n'
+		selectionHTML += `\t<option value=${classItem['slug']}>${classItem['name']}</option>`
 	}
+	selectionHTML += '\n'
+
+	// Apply option-group items to selection input.
+	document
+	.querySelector('#class-selection select')
+	.innerHTML = selectionHTML
+
+	// Unhide class selection fields.
+	document
+	.getElementById('class-selection')
+	.removeAttribute('hidden')
 
 	/* EXPERIMENTATION BELOW */
 	/***************************************************************************************
@@ -77,5 +96,5 @@ const hookFetchData = async () => {
 }
 
 document
-.getElementById('fetch-button')
+.querySelector('#fetch-character-data input')
 .addEventListener('click', hookFetchData)
