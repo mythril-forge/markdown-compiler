@@ -4,6 +4,45 @@ import {RegExX} from './reg-exx.js'
 /* PREPARE RETRIEVED API DATA */
 // Using the text from the API, this module can properly parse JSON.
 // The JSON entered into normal JavaScript objects, and the markdown entry is added.
+
+const prepareClassData = (classData) => {
+
+	// First, collect all the filenames from the classData keys.
+	// This isn't necessary, but will help catch errors from missing and extra files.
+	// Note that the keys have a filetype extention, so they need to be cut off.
+	const filepaths = Object.keys(classData)
+	const filenames = filepaths.reduce(collectNamesFromPaths, new Set([]))
+
+	// Fill in a new object with data as each filename is iterated over.
+	const classes = []
+	for (const filename of filenames) {
+		// Gather the filepaths to get data.
+		const jsonFilepath = filename + '.json'
+		const descFilepath = filename + '.md'
+
+		// It's not okay if the JSON file doesn't exist.
+		const classy = JSON.parse(classData[jsonFilepath])
+		classes.push(classy)
+
+		// It's okay if the markdown file doesn't exist.
+		const template = classData[descFilepath] || null
+
+		if (template !== null) {
+			// It's likely that the template is valid if no class explicitly gets it.
+			// Still, it is safer to pass the template through the parser anyway.
+			const markdown = prepareDescription(template, classy, null)
+			classy['markdown'] = markdown
+		}
+		else {
+			// Pass. There's no markdown description for this classy.
+		}
+	}
+
+	// Return compiled object.
+	return classes
+}
+
+
 const prepareFeatureData = (featureData) => {
 
 	// First, collect all the filenames from the featureData keys.
@@ -206,4 +245,7 @@ const collectNamesFromPaths = (filenames, filepath) => {
 /* MAKE MODULE EXPORTS */
 // This will be exported as a promise.
 // The next module will have to await the data as normal.
-export {prepareFeatureData}
+export {
+	prepareFeatureData,
+	prepareClassData,
+}
