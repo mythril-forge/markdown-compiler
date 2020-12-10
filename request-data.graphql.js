@@ -79,7 +79,7 @@ const requestClassData = async () => {
 	const data = await response
 
 	// Select specific classes property, process, and return.
-	const entries = data['organization']['repository']['classes']['entries']
+	const {entries} = data['organization']['repository']['classes']
 	return processData(entries)
 }
 
@@ -89,7 +89,7 @@ const requestFeatureData = async () => {
 	const data = await response
 
 	// Select specific classes property, process, and return.
-	const entries = data['organization']['repository']['features']['entries']
+	const {entries} = data['organization']['repository']['features']
 	return processData(entries)
 }
 
@@ -101,8 +101,8 @@ const processData = (entries) => {
 	// Create a new object and populate it with flat data.
 	const files = {}
 	for (const entry of entries) {
-		const entryName = entry.name
-		const entryText = entry.object.text
+		const entryName = entry['name']
+		const entryText = entry['object']['text']
 
 		// Some directories may exist in the results, but we don't need them.
 		// To avoid adding those uneeded folders, ignore files that don't have any text.
