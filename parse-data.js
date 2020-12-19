@@ -1,9 +1,20 @@
+let classes = null
+let features = null
+const initParseData = (classesInput, featuresInput) => {
+	classes = classesInput
+	features = featuresInput
+}
 /*
 While this isn't itself a mapper, it returns a mapper function for features.
 This mapper returns a series of progression arrays with all implied entries filled in.
 It doesn't track feature names, but it doesn't have to either.
 */
-const fillProgression = (className, levelOffset = 0, levelMaximum = 20) => {
+const fillProgression = (classSlug, levelOffset = 0, levelMaximum = 20) => {
+
+	// Get true class name.
+	const className = classes.find((classItem) => {
+		return classItem['slug'] === classSlug
+	})['name']
 
 	// Create another function to be returned.
 	const mapper = (feature) => {
@@ -16,37 +27,41 @@ const fillProgression = (className, levelOffset = 0, levelMaximum = 20) => {
 		const progressionFull = [...new Array(20)].map((_, index) => {
 			const level = 1 + index
 			const row = {
-				Level: level,
+				Levels: {},
 				Features: [],
 			}
+
+			// Set the total level.
+			row['Levels']['Total Level'] = level
+
+			// Set the class level. It must be below 20 or the max level and above 0.
+			const classLevel = level - levelOffset
+			const classLevelMaximum = levelMaximum - levelOffset
+			row['Levels'][`${className} Level`] = Math.max(Math.min(classLevel, classLevelMaximum), 0)
 			return row
 		})
 
-		try {
-			// Get this feature's progression. Make a copy since we plan to manipulate it.
-			var progressionData = [...feature['classes'][className]['progression']]
-		}
-
-		catch {
-			// If there was some error, this feature doesn't have progression.
-			var progressionData = []
-		}
+		// Get this feature's progression. Make a copy since we plan to manipulate it.
+		let progressionData = [...feature['classes']?.[classSlug]?.['progression'] || []]
 
 		progressionData = progressionData.filter((row) => {
 			// Remove all rows that don't satisfy the metaparameters.
-			return row['Level'] + levelOffset <= levelMaximum
+			return row['Levels'][`${className} Level`] + levelOffset <= levelMaximum
 		})
 
 		// Each row in the progressionData dictionary should already be sorted by levels.
 		// Still, its safer to just re-sort it here; dictionaries are canonically unsorted.
 		progressionData.sort((row01, row02) => {
+			const level01 = row01['Levels'][`${className} Level`]
+			const level02 = row02['Levels'][`${className} Level`]
+
 			if (row01 === row02) {
 				return 0
 			}
-			else if (row01['Level'] > row02['Level']) {
+			else if (level01 > level02) {
 				return 1
 			}
-			else if (row01['Level'] < row02['Level']) {
+			else if (level01 < level02) {
 				return -1
 			}
 			else {
@@ -60,8 +75,8 @@ const fillProgression = (className, levelOffset = 0, levelMaximum = 20) => {
 			const dataCells = Object.entries(dataRow)
 			for (const [column, data] of dataCells) {
 
-				// "Level" already exists in all rows.
-				if (column === 'Level') {
+				// "Levels" already exists in all rows.
+				if (column === 'Levels') {
 					continue
 				}
 
@@ -70,7 +85,7 @@ const fillProgression = (className, levelOffset = 0, levelMaximum = 20) => {
 
 					// Find the full row entry whose level matches.
 					const fullRow = progressionFull.find((fullRow) => {
-						return fullRow['Level'] === dataRow['Level'] + levelOffset
+						return fullRow['Levels']['Total Level'] === dataRow['Levels'][`${className} Level`] + levelOffset
 					})
 
 					// Once we have this entry, we can add data to its "Features" array.
@@ -97,7 +112,7 @@ const fillProgression = (className, levelOffset = 0, levelMaximum = 20) => {
 							}
 
 							// If the level is valid, replace it with the value.
-							if (fullRow['Level'] >= dataRow['Level'] + levelOffset) {
+							if (fullRow['Levels']['Total Level'] >= dataRow['Levels'][`${className} Level`] + levelOffset) {
 								fullRow[column][subcolumn] = subdata
 							}
 						}
@@ -114,7 +129,7 @@ const fillProgression = (className, levelOffset = 0, levelMaximum = 20) => {
 						}
 
 						// If the level is valid, replace it with the value.
-						if (fullRow['Level'] >= dataRow['Level'] + levelOffset) {
+						if (fullRow['Levels']['Total Level'] >= dataRow['Levels'][`${className} Level`] + levelOffset) {
 							fullRow[column] = data
 						}
 					}
@@ -136,7 +151,7 @@ While this isn't itself a filterer, it returns a filterer function.
 This inception is done to allow additional parameters to be passed in.
 As other functions here, this is to be used with arrays of features.
 */
-const filterByClass = (className) => {
+const filterByClass = (classSlug) => {
 
 	// We have a class name, and can use it to create a function without it as a parameter.
 	const filterer = (feature) => {
@@ -145,7 +160,7 @@ const filterByClass = (className) => {
 		try {
 
 			// This is featured in our class only if it has a progression.
-			return feature['classes'][className]['progression'] !== undefined
+			return feature['classes'][classSlug]['progression'] !== undefined
 		}
 
 		// If there is some error, its because the expected keys or values didn't exist.
@@ -173,22 +188,22 @@ const groupByClasses = () => {
 	const reducer = (featuresPerClass, feature) => {
 
 		// Loop through each class within each feature.
-		const classNames = Object.keys(feature['classes'] || {})
-		for (const className of classNames) {
+		const classSlugs = Object.keys(feature['classes'] || {})
+		for (const classSlug of classSlugs) {
 
 			// It's better to ask for forgiveness than to ask for permission.
 			try {
 
 				// This is featured in our class only if it has a progression.
-				if (feature['classes'][className]['progression'] !== undefined) {
+				if (feature['classes'][classSlug]['progression'] !== undefined) {
 
 					// Make this classes' entry if it doesn't yet exist.
-					if (!(className in featuresPerClass)) {
-						featuresPerClass[className] = []
+					if (!(classSlug in featuresPerClass)) {
+						featuresPerClass[classSlug] = []
 					}
 
 					// Add the feature to the entry.
-					featuresPerClass[className].push(feature)
+					featuresPerClass[classSlug].push(feature)
 				}
 			}
 
@@ -251,13 +266,13 @@ const mergeProgression = () => {
 			// Ensure that the level exists for a row in this progression.
 			// Luckily, its easy if it does not -- just copy this data row!
 			const hasLevel = progressionFull.some((fullRow) => {
-				return fullRow['Level'] === dataRow['Level']
+				return fullRow['Levels']['Total Level'] === dataRow['Levels']['Total Level']
 			})
 			if (hasLevel) {
 
 				// Find the full row entry whose level matches.
 				const fullRow = progressionFull.find((fullRow) => {
-					return fullRow['Level'] === dataRow['Level']
+					return fullRow['Levels']['Total Level'] === dataRow['Levels']['Total Level']
 				})
 
 				// Loop through each row & column of this progression set.
@@ -269,9 +284,16 @@ const mergeProgression = () => {
 						fullRow[column] = data
 					}
 
-					// The "Level" column will already exist.
-					else if (column === 'Level') {
-						continue
+					// The "Level" column is special; it contains subcolumns and numerical data.
+					else if (column === 'Levels') {
+						// Loop through every subcolumn and update.
+						const subdataCells = Object.entries(data)
+						for (const [subcolumn, subdata] of subdataCells) {
+							// Only update if it does not exist.
+							if (!(subcolumn in fullRow[column])) {
+								fullRow[column][subcolumn] = subdata
+							}
+						}
 					}
 
 					// The "Features" array just requires pushed data.
@@ -317,6 +339,7 @@ const mergeProgression = () => {
 
 
 export {
+	initParseData,
 	filterByClass,
 	groupByClasses,
 	groupByName,

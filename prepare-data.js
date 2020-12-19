@@ -1,9 +1,15 @@
 import {readLevels} from './helpers.js'
 import {RegExX} from './reg-exx.js'
+import {initParseData} from './parse-data.js'
 
 /* PREPARE RETRIEVED API DATA */
 // Using the text from the API, this module can properly parse JSON.
 // The JSON entered into normal JavaScript objects, and the markdown entry is added.
+
+// Start by initializing these useful values in the module.
+let classes = null
+let features = null
+
 
 const prepareClassData = (classData) => {
 
@@ -14,7 +20,7 @@ const prepareClassData = (classData) => {
 	const filenames = filepaths.reduce(collectNamesFromPaths, new Set([]))
 
 	// Fill in a new object with data as each filename is iterated over.
-	const classes = []
+	classes = []
 	for (const filename of filenames) {
 		// Gather the filepaths to get data.
 		const jsonFilepath = filename + '.json'
@@ -37,11 +43,10 @@ const prepareClassData = (classData) => {
 			// Pass. There's no markdown description for this classy.
 		}
 	}
-
 	// Return compiled object.
+	initParseData(classes, features)
 	return classes
 }
-
 
 const prepareFeatureData = (featureData) => {
 
@@ -52,7 +57,8 @@ const prepareFeatureData = (featureData) => {
 	const filenames = filepaths.reduce(collectNamesFromPaths, new Set([]))
 
 	// Fill in a new object with data as each filename is iterated over.
-	const features = []
+	features = []
+
 	for (const filename of filenames) {
 
 		// Gather the filepaths to get data.
@@ -61,6 +67,21 @@ const prepareFeatureData = (featureData) => {
 
 		// It's not okay if the JSON file doesn't exist.
 		const feature = JSON.parse(featureData[jsonFilepath])
+
+		// Configure the data from the JSON.
+		for (const classSlug of Object.keys(feature['classes'] ?? [])) {
+			// Get true class name.
+			const className = classes.find((classItem) => {
+				return classItem['slug'] === classSlug
+			})['name']
+
+			// Reconfigure leveling format hierarchy.
+			for (const featureRow of feature['classes'][classSlug]['progression'] ?? []) {
+				featureRow['Levels'] ??= {}
+				featureRow['Levels'][`${className} Level`] = featureRow['Level']
+				delete featureRow['Level']
+			}
+		}
 		features.push(feature)
 
 		// It's okay if the markdown file doesn't exist.
@@ -68,12 +89,12 @@ const prepareFeatureData = (featureData) => {
 		if ('classes' in feature && template !== null) {
 
 			// Loop through every class that has this feature.
-			for (const className in feature['classes']) {
+			for (const classSlug in feature['classes']) {
 
 				// Then, parse the pseudo-markdown template and make it valid.
 				// There is metadata attached that helps fill in the blanks.
-				const markdown = prepareDescription(template, feature, className)
-				feature['classes'][className]['markdown'] = markdown
+				const markdown = prepareDescription(template, feature, classSlug)
+				feature['classes'][classSlug]['markdown'] = markdown
 			}
 		}
 		else if (template !== null) {
@@ -89,26 +110,36 @@ const prepareFeatureData = (featureData) => {
 	}
 
 	// Return compiled object.
+	initParseData(classes, features)
 	return features
 }
 
-const prepareDescription = (template, feature, className) => {
-	// Base case: there is no valid className.
-	if (className === null) {
+const prepareDescription = (template, feature, classSlug) => {
+	// Base case: there is no valid classSlug.
+	if (classSlug === null) {
 		return template
 	}
+
+	// Get true class name.
+	const className = classes.find((classItem) => {
+		return classItem['slug'] === classSlug
+	})['name']
+
 	// Track each visited text-tag.
 	const visitedTags = []
 
 	// Obtain a shorthand for the progression table.
-	const progression = feature['classes'][className]['progression'] || []
+	const progression = feature['classes'][classSlug]['progression'] || []
+
 	// The progression table may not be sorted. Sort it!
 	progression.sort((row01, row02) => {
+		const level01 = row01['Levels'][`${className} Level`]
+		const level02 = row02['Levels'][`${className} Level`]
 		if (row01 === row02) {
 			return 0
-		} else if (row01['Level'] > row02['Level']) {
+		} else if (level01 > level02) {
 			return 1
-		} else if (row01['Level'] < row02['Level']) {
+		} else if (level01 < level02) {
 			return -1
 		} else {
 			return 0
@@ -129,9 +160,9 @@ const prepareDescription = (template, feature, className) => {
 		let right = tagSearch['right']
 		let middle = ''
 
-		// Replace tag with designated className.
+		// Replace tag with designated classSlug.
 		if (tag === 'class') {
-			middle = className
+			middle = classSlug
 		}
 
 		// Replace tag with a level signature.
@@ -152,7 +183,7 @@ const prepareDescription = (template, feature, className) => {
 			// If tag is all-levels, add all levels ever.
 			if (tag === 'all-levels') {
 				// Collect each of the feature's row-level for this action.
-				const levels = progression.map(row => row['Level'])
+				const levels = progression.map(row => row['Levels'][`${className} Level`])
 				// Add textified level signature ordinals.
 				middle = readLevels(...levels)
 			}
@@ -162,7 +193,7 @@ const prepareDescription = (template, feature, className) => {
 				// Get the associated row. This row's index equals the current number of visits.
 				const row = progression[countedVisits]
 				// Get the level.
-				const level = row['Level']
+				const level = row['Levels'][`${className} Level`]
 				// Stringify the level signature using ordinals.
 				middle = readLevels(level)
 			}
@@ -170,7 +201,7 @@ const prepareDescription = (template, feature, className) => {
 			// Add multiple levels.
 			else if (tag === 'end-levels' && countedVisits < progression.length) {
 				// Collect each of the feature's valid row-level for this action.
-				const levels = progression.slice(countedVisits).map(row => row['Level'])
+				const levels = progression.slice(countedVisits).map(row => row['Levels'][`${className} Level`])
 				// Stringify the level signature using ordinals.
 				middle = readLevels(...levels)
 			}
@@ -202,8 +233,8 @@ const prepareDescription = (template, feature, className) => {
 		}
 
 		// Check if the tag is a variable nametag.
-		else if (tag in feature['classes'][className]['variables']) {
-			middle = feature['classes'][className]['variables'][tag]
+		else if (tag in feature['classes'][classSlug]['variables']) {
+			middle = feature['classes'][classSlug]['variables'][tag]
 		}
 
 		// Otherwise the tag is malformed.

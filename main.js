@@ -15,21 +15,21 @@ import {
 	generateDescriptions,
 } from './write-descriptions.js'
 
-let features = null
 let classes = null
+let features = null
 
 const fetchData = async () => {
 	// Obtain all classes & features, ever.
-	const featurePromise = requestFeatureData()
 	const classPromise = requestClassData()
+	const featurePromise = requestFeatureData()
 
 	// Await for all of those details.
-	const featureData = await featurePromise
 	const classData = await classPromise
+	const featureData = await featurePromise
 
 	// Digest those data into more useable objects.
-	features ??= prepareFeatureData(featureData)
 	classes ??= prepareClassData(classData)
+	features ??= prepareFeatureData(featureData)
 }
 
 const hookFetchData = async () => {

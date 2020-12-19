@@ -1,5 +1,5 @@
 import {RegExX} from './reg-exx.js'
-// import {alphabet} from './helpers'
+import {ordinal} from './helpers.js'
 
 
 const generateDescriptions = (progression, className, featuresByClass, featuresByName) => {
@@ -28,7 +28,7 @@ const generateDescriptions = (progression, className, featuresByClass, featuresB
 
 	// Next, sort by their level.
 	features.sort((a, b) => {
-		const feature = (f) => f['classes'][className]['progression'][0]['Level']??Infinity
+		const feature = (f) => f['classes'][className]['progression'][0]['Levels']['Total Level']??Infinity
 		if (a === b) {
 			return 0
 		}
@@ -83,7 +83,6 @@ const generateDescriptions = (progression, className, featuresByClass, featuresB
 	for (const feature of features) {
 		description += writeFeature(feature)
 	}
-	console.log(description)
 	return description
 }
 
@@ -288,7 +287,7 @@ const generateSummaryTable = (progression) => {
 		// Level & Feature columns always are placed first.
 		// Spells Ready and Spell Slots per Slot Level are last.
 		const getPriority = (column) => {
-			if (column === "Level") {
+			if (column === "Levels") {
 				return 0
 			}
 			else if (column === "Features") {
@@ -404,7 +403,8 @@ const generateSummaryTable = (progression) => {
 				let flag = false
 				for (let item of Object.values(entry)) {
 					flag = true
-					if (item === null) {item = '&mdash;'}
+					if (item === null || item === 0 || Number.isNaN(item)) {item = '&mdash;'}
+					else if (column === 'Levels') {item = ordinal(item)}
 					table += `\n\t\t\t<td>${item}</td>`
 				}
 				if (!flag) {
@@ -418,8 +418,9 @@ const generateSummaryTable = (progression) => {
 					entry = entry.join(', ')
 					if (entry === '') {entry = '&mdash;'}
 				}
+
 				else if (entry instanceof Number) {
-					entry = ordinal(entry)
+					continue
 				}
 
 				else if (entry === null) {entry = '&mdash;'}
